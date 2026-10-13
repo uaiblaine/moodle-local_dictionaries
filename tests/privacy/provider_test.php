@@ -17,22 +17,22 @@
 /**
  * Tests for the privacy provider.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @category   test
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-namespace local_profilefield_repeatable\privacy;
+namespace local_dictionaries\privacy;
 
 /**
  * The privacy provider meets what core's compliance test requires.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @category   test
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers     \local_profilefield_repeatable\privacy\provider
+ * @covers     \local_dictionaries\privacy\provider
  */
 final class provider_test extends \core_privacy\tests\provider_testcase {
     /**
@@ -46,6 +46,6 @@ final class provider_test extends \core_privacy\tests\provider_testcase {
      * @return void
      */
     public function test_the_component_is_compliant(): void {
-        $this->assertTrue((new \core_privacy\manager())->component_is_compliant('local_profilefield_repeatable'));
+        $this->assertTrue((new \core_privacy\manager())->component_is_compliant('local_dictionaries'));
     }
 }

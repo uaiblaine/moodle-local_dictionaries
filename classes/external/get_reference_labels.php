@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable\external;
+namespace local_dictionaries\external;
 
 use context_system;
 use core_external\external_api;
@@ -23,13 +23,13 @@ use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
 use invalid_parameter_exception;
-use local_profilefield_repeatable\local\manager;
-use local_profilefield_repeatable\resolver;
+use local_dictionaries\local\manager;
+use local_dictionaries\resolver;
 
 /**
  * External API to resolve reference labels.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -63,11 +63,11 @@ class get_reference_labels extends external_api {
 
         $context = context_system::instance();
         self::validate_context($context);
-        require_capability('local/profilefield_repeatable:viewreference', $context);
+        require_capability('local/dictionaries:view', $context);
 
         if (count($params['codes']) > manager::MAX_BATCH_SIZE) {
             throw new invalid_parameter_exception(
-                get_string('maxbatchsizeexceeded', 'local_profilefield_repeatable', manager::MAX_BATCH_SIZE)
+                get_string('maxbatchsizeexceeded', 'local_dictionaries', manager::MAX_BATCH_SIZE)
             );
         }
 

@@ -14,14 +14,14 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable;
+namespace local_dictionaries;
 
 /**
- * Tests for local_profilefield_repeatable manager and resolver.
+ * Tests for local_dictionaries manager and resolver.
  *
- * @package    local_profilefield_repeatable
- * @covers     \local_profilefield_repeatable\local\manager
- * @covers     \local_profilefield_repeatable\resolver
+ * @package    local_dictionaries
+ * @covers     \local_dictionaries\local\manager
+ * @covers     \local_dictionaries\resolver
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -38,13 +38,13 @@ final class manager_test extends \advanced_testcase {
         $this->setAdminUser();
 
         if (
-            !$DB->get_manager()->table_exists(new \xmldb_table('local_profilefield_repeatable_domain')) ||
-            !$DB->get_manager()->table_exists(new \xmldb_table('local_profilefield_repeatable_item'))
+            !$DB->get_manager()->table_exists(new \xmldb_table('local_dictionaries_domain')) ||
+            !$DB->get_manager()->table_exists(new \xmldb_table('local_dictionaries_item'))
         ) {
-            $this->markTestSkipped('local_profilefield_repeatable tables are not available.');
+            $this->markTestSkipped('local_dictionaries tables are not available.');
         }
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
 
         $first = $manager->upsert_items('diretoria', [[
@@ -54,7 +54,7 @@ final class manager_test extends \advanced_testcase {
         $this->assertSame(1, $first['inserted']);
         $this->assertSame(0, $first['updated']);
 
-        $this->assertSame('Sao Paulo', \local_profilefield_repeatable\resolver::resolve('diretoria', '16'));
+        $this->assertSame('Sao Paulo', \local_dictionaries\resolver::resolve('diretoria', '16'));
 
         $second = $manager->upsert_items('diretoria', [[
             'code' => '16',
@@ -63,14 +63,14 @@ final class manager_test extends \advanced_testcase {
         $this->assertSame(0, $second['inserted']);
         $this->assertSame(1, $second['updated']);
 
-        $this->assertSame('Sao Paulo - Capital', \local_profilefield_repeatable\resolver::resolve('diretoria', '16'));
+        $this->assertSame('Sao Paulo - Capital', \local_dictionaries\resolver::resolve('diretoria', '16'));
     }
 
     /**
      * Ensure CSV parser accepts optional header and returns code-label rows.
      */
     public function test_parse_csv_content_with_header(): void {
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $items = $manager->parse_csv_content("code,label\n16,Sao Paulo\n17,Rio");
 
         $this->assertCount(2, $items);
@@ -89,15 +89,15 @@ final class manager_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        if (!$DB->get_manager()->table_exists(new \xmldb_table('local_profilefield_repeatable_domain'))) {
-            $this->markTestSkipped('local_profilefield_repeatable tables are not available.');
+        if (!$DB->get_manager()->table_exists(new \xmldb_table('local_dictionaries_domain'))) {
+            $this->markTestSkipped('local_dictionaries tables are not available.');
         }
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
 
         $this->expectException(\moodle_exception::class);
         $this->expectExceptionMessage(
-            get_string('errorunknowndomain', 'local_profilefield_repeatable', 'missing_domain')
+            get_string('errorunknowndomain', 'local_dictionaries', 'missing_domain')
         );
         $manager->upsert_items('missing_domain', [['code' => '1', 'label' => 'X']]);
     }
@@ -111,11 +111,11 @@ final class manager_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        if (!$DB->get_manager()->table_exists(new \xmldb_table('local_profilefield_repeatable_domain'))) {
-            $this->markTestSkipped('local_profilefield_repeatable tables are not available.');
+        if (!$DB->get_manager()->table_exists(new \xmldb_table('local_dictionaries_domain'))) {
+            $this->markTestSkipped('local_dictionaries tables are not available.');
         }
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
 
         $items = [];
@@ -128,8 +128,8 @@ final class manager_test extends \advanced_testcase {
         $this->assertSame(5, $counts['inserted']);
         $this->assertSame(0, $counts['updated']);
         $this->assertSame(0, $counts['ignored']);
-        $this->assertSame(5, $DB->count_records('local_profilefield_repeatable_item'));
-        $this->assertSame('Label 4', \local_profilefield_repeatable\resolver::resolve('diretoria', 'c4'));
+        $this->assertSame(5, $DB->count_records('local_dictionaries_item'));
+        $this->assertSame('Label 4', \local_dictionaries\resolver::resolve('diretoria', 'c4'));
 
         $counts = $manager->upsert_items_chunked('diretoria', $items, 2);
         $this->assertSame(0, $counts['inserted']);

@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable\form;
+namespace local_dictionaries\form;
 
 use core_text;
 use moodleform;
@@ -26,7 +26,7 @@ require_once($CFG->libdir . '/formslib.php');
 /**
  * Form to import code/label pairs from CSV.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -40,23 +40,23 @@ class import_csv_form extends moodleform {
         $mform->addElement(
             'header',
             'importcsvheader',
-            get_string('importcsv', 'local_profilefield_repeatable')
+            get_string('importcsv', 'local_dictionaries')
         );
 
         $mform->addElement(
             'text',
             'importdomainshortname',
-            get_string('domainshortname', 'local_profilefield_repeatable'),
+            get_string('domainshortname', 'local_dictionaries'),
             [
                 'maxlength' => 100,
                 'size' => 40,
-                'placeholder' => get_string('placeholderdomainshortname', 'local_profilefield_repeatable'),
+                'placeholder' => get_string('placeholderdomainshortname', 'local_dictionaries'),
             ]
         );
         $mform->setType('importdomainshortname', PARAM_RAW_TRIMMED);
         $mform->addRule(
             'importdomainshortname',
-            get_string('domainrequired', 'local_profilefield_repeatable'),
+            get_string('domainrequired', 'local_dictionaries'),
             'required',
             null,
             'client'
@@ -65,7 +65,7 @@ class import_csv_form extends moodleform {
         $mform->addElement(
             'filepicker',
             'csvfile',
-            get_string('csvfile', 'local_profilefield_repeatable'),
+            get_string('csvfile', 'local_dictionaries'),
             null,
             ['accepted_types' => ['.csv', '.txt'], 'maxbytes' => 0]
         );
@@ -73,7 +73,7 @@ class import_csv_form extends moodleform {
         $mform->addElement(
             'textarea',
             'csvtext',
-            get_string('csvtext', 'local_profilefield_repeatable'),
+            get_string('csvtext', 'local_dictionaries'),
             ['rows' => 8, 'cols' => 80, 'style' => 'font-family:monospace']
         );
         $mform->setType('csvtext', PARAM_RAW);
@@ -82,7 +82,7 @@ class import_csv_form extends moodleform {
             'static',
             'csvhelp',
             '',
-            get_string('csvhelp', 'local_profilefield_repeatable')
+            get_string('csvhelp', 'local_dictionaries')
         );
 
         $mform->addElement('hidden', 'action', 'importcsv');
@@ -93,7 +93,7 @@ class import_csv_form extends moodleform {
          * screen readers and UI tests alike. Named element instead of
          * add_action_buttons(): two moodleforms share manage.php, and the
          * default 'submitbutton' name would duplicate the DOM id. */
-        $mform->addElement('submit', 'importitemsbutton', get_string('importitems', 'local_profilefield_repeatable'));
+        $mform->addElement('submit', 'importitemsbutton', get_string('importitems', 'local_dictionaries'));
         $mform->closeHeaderBefore('importitemsbutton');
     }
 
@@ -109,14 +109,14 @@ class import_csv_form extends moodleform {
 
         $shortname = core_text::strtolower(trim((string)($data['importdomainshortname'] ?? '')));
         if ($shortname === '') {
-            $errors['importdomainshortname'] = get_string('domainrequired', 'local_profilefield_repeatable');
+            $errors['importdomainshortname'] = get_string('domainrequired', 'local_dictionaries');
         } else if (!preg_match('/^[a-z0-9_]+$/', $shortname)) {
-            $errors['importdomainshortname'] = get_string('domaininvalid', 'local_profilefield_repeatable');
+            $errors['importdomainshortname'] = get_string('domaininvalid', 'local_dictionaries');
         }
 
         $hastext = trim((string)($data['csvtext'] ?? '')) !== '';
         if (!$hastext && empty($this->get_draft_files('csvfile'))) {
-            $errors['csvfile'] = get_string('csvrequired', 'local_profilefield_repeatable');
+            $errors['csvfile'] = get_string('csvrequired', 'local_dictionaries');
         }
 
         return $errors;

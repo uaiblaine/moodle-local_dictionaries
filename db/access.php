@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Capabilities for local_profilefield_repeatable.
+ * Capabilities for local_dictionaries.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
-    'local/profilefield_repeatable:managereference' => [
+    'local/dictionaries:manage' => [
         'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
         'contextlevel' => CONTEXT_SYSTEM,
@@ -33,12 +33,12 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
-    'local/profilefield_repeatable:viewreference' => [
+    'local/dictionaries:view' => [
         'captype' => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes' => [
             'manager' => CAP_ALLOW,
         ],
-        'clonepermissionsfrom' => 'local/profilefield_repeatable:managereference',
+        'clonepermissionsfrom' => 'local/dictionaries:manage',
     ],
 ];

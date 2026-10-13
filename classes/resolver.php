@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable;
+namespace local_dictionaries;
 
 use cache;
 use core_text;
@@ -22,16 +22,16 @@ use core_text;
 /**
  * Resolve code values into labels using local reference tables.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class resolver {
     /** @var string Domain table name. */
-    private const DOMAIN_TABLE = 'local_profilefield_repeatable_domain';
+    private const DOMAIN_TABLE = 'local_dictionaries_domain';
 
     /** @var string Item table name. */
-    private const ITEM_TABLE = 'local_profilefield_repeatable_item';
+    private const ITEM_TABLE = 'local_dictionaries_item';
 
     /** @var string Domain shortname pattern. */
     private const DOMAIN_PATTERN = '/^[a-z0-9_]+$/';
@@ -81,7 +81,7 @@ class resolver {
             return [];
         }
 
-        $cache = cache::make('local_profilefield_repeatable', 'labels');
+        $cache = cache::make('local_dictionaries', 'labels');
         $cachekeys = [];
         foreach ($normalisedcodes as $code) {
             $cachekeys[$code] = self::build_cache_key($domain, $code);
@@ -197,7 +197,7 @@ class resolver {
         try {
             return $cache->get_many($keys);
         } catch (\Throwable $e) {
-            debugging('local_profilefield_repeatable: cache get_many failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            debugging('local_dictionaries: cache get_many failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
             return [];
         }
     }
@@ -213,7 +213,7 @@ class resolver {
         try {
             $cache->set($key, $value);
         } catch (\Throwable $e) {
-            debugging('local_profilefield_repeatable: cache set failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            debugging('local_dictionaries: cache set failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
         }
     }
 

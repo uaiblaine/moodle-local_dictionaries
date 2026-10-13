@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
-<ruleset name="local_profilefield_repeatable">
-    <description>PHPCS rules for local_profilefield_repeatable.</description>
+<ruleset name="local_dictionaries">
+    <description>PHPCS rules for local_dictionaries.</description>
 
     <rule ref="moodle" />
 

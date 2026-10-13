@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable;
+namespace local_dictionaries;
 
 /**
  * Tests for the resolver class.
  *
- * @package    local_profilefield_repeatable
- * @covers     \local_profilefield_repeatable\resolver
+ * @package    local_dictionaries
+ * @covers     \local_dictionaries\resolver
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -32,10 +32,10 @@ final class resolver_test extends \advanced_testcase {
         global $DB;
         $dbman = $DB->get_manager();
         if (
-            !$dbman->table_exists(new \xmldb_table('local_profilefield_repeatable_domain')) ||
-            !$dbman->table_exists(new \xmldb_table('local_profilefield_repeatable_item'))
+            !$dbman->table_exists(new \xmldb_table('local_dictionaries_domain')) ||
+            !$dbman->table_exists(new \xmldb_table('local_dictionaries_item'))
         ) {
-            $this->markTestSkipped('local_profilefield_repeatable tables are not available.');
+            $this->markTestSkipped('local_dictionaries tables are not available.');
         }
     }
 
@@ -46,7 +46,7 @@ final class resolver_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->require_tables();
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
 
         $this->assertNull(resolver::resolve('diretoria', 'missing'));
@@ -59,7 +59,7 @@ final class resolver_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->require_tables();
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
         $manager->upsert_items('diretoria', [
             ['code' => '01', 'label' => 'Sao Paulo'],
@@ -92,7 +92,7 @@ final class resolver_test extends \advanced_testcase {
 
         $this->assertFalse(resolver::domain_exists('diretoria'));
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
 
         $this->assertTrue(resolver::domain_exists('diretoria'));

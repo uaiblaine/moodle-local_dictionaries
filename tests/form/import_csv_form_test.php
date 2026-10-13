@@ -14,13 +14,13 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable\form;
+namespace local_dictionaries\form;
 
 /**
  * Tests for import_csv_form validation.
  *
- * @package    local_profilefield_repeatable
- * @covers     \local_profilefield_repeatable\form\import_csv_form
+ * @package    local_dictionaries
+ * @covers     \local_dictionaries\form\import_csv_form
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -32,7 +32,7 @@ final class import_csv_form_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $form = new import_csv_form('/local/profilefield_repeatable/manage.php');
+        $form = new import_csv_form('/local/dictionaries/manage.php');
         $errors = $form->validation([
             'importdomainshortname' => 'Bad Domain!',
             'csvtext' => '01,Sao Paulo',
@@ -40,7 +40,7 @@ final class import_csv_form_test extends \advanced_testcase {
 
         $this->assertArrayHasKey('importdomainshortname', $errors);
         $this->assertSame(
-            get_string('domaininvalid', 'local_profilefield_repeatable'),
+            get_string('domaininvalid', 'local_dictionaries'),
             $errors['importdomainshortname']
         );
     }
@@ -52,7 +52,7 @@ final class import_csv_form_test extends \advanced_testcase {
         $this->resetAfterTest();
         $this->setAdminUser();
 
-        $form = new import_csv_form('/local/profilefield_repeatable/manage.php');
+        $form = new import_csv_form('/local/dictionaries/manage.php');
         $errors = $form->validation([
             'importdomainshortname' => 'diretoria',
             'csvtext' => '01,Sao Paulo',

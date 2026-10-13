@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Web service definitions for local_profilefield_repeatable.
+ * Web service definitions for local_dictionaries.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,20 +25,20 @@
 defined('MOODLE_INTERNAL') || die();
 
 $functions = [
-    'local_profilefield_repeatable_upsert_reference_items' => [
-        'classname' => 'local_profilefield_repeatable\\external\\upsert_reference_items',
+    'local_dictionaries_upsert_reference_items' => [
+        'classname' => 'local_dictionaries\\external\\upsert_reference_items',
         'methodname' => 'execute',
         'description' => 'Upsert reference code-label pairs for one domain.',
         'type' => 'write',
-        'capabilities' => 'local/profilefield_repeatable:managereference',
+        'capabilities' => 'local/dictionaries:manage',
         'ajax' => true,
     ],
-    'local_profilefield_repeatable_get_reference_labels' => [
-        'classname' => 'local_profilefield_repeatable\\external\\get_reference_labels',
+    'local_dictionaries_get_reference_labels' => [
+        'classname' => 'local_dictionaries\\external\\get_reference_labels',
         'methodname' => 'execute',
         'description' => 'Resolve labels for reference codes in one domain.',
         'type' => 'read',
-        'capabilities' => 'local/profilefield_repeatable:viewreference',
+        'capabilities' => 'local/dictionaries:view',
         'ajax' => true,
     ],
 ];
@@ -46,11 +46,11 @@ $functions = [
 $services = [
     'Profilefield Repeatable Reference API' => [
         'functions' => [
-            'local_profilefield_repeatable_upsert_reference_items',
-            'local_profilefield_repeatable_get_reference_labels',
+            'local_dictionaries_upsert_reference_items',
+            'local_dictionaries_get_reference_labels',
         ],
         'restrictedusers' => 0,
         'enabled' => 1,
-        'shortname' => 'local_profilefield_repeatable_api',
+        'shortname' => 'local_dictionaries_api',
     ],
 ];

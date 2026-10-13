@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable\external;
+namespace local_dictionaries\external;
 
 use core_external\external_api;
 
 /**
  * Tests for upsert_reference_items external function.
  *
- * @package    local_profilefield_repeatable
- * @covers     \local_profilefield_repeatable\external\upsert_reference_items
+ * @package    local_dictionaries
+ * @covers     \local_dictionaries\external\upsert_reference_items
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -34,10 +34,10 @@ final class upsert_reference_items_test extends \advanced_testcase {
         global $DB;
         $dbman = $DB->get_manager();
         if (
-            !$dbman->table_exists(new \xmldb_table('local_profilefield_repeatable_domain')) ||
-            !$dbman->table_exists(new \xmldb_table('local_profilefield_repeatable_item'))
+            !$dbman->table_exists(new \xmldb_table('local_dictionaries_domain')) ||
+            !$dbman->table_exists(new \xmldb_table('local_dictionaries_item'))
         ) {
-            $this->markTestSkipped('local_profilefield_repeatable tables are not available.');
+            $this->markTestSkipped('local_dictionaries tables are not available.');
         }
     }
 
@@ -49,7 +49,7 @@ final class upsert_reference_items_test extends \advanced_testcase {
         $this->require_tables();
         $this->setAdminUser();
 
-        (new \local_profilefield_repeatable\local\manager())->upsert_domain('diretoria', 'Diretoria');
+        (new \local_dictionaries\local\manager())->upsert_domain('diretoria', 'Diretoria');
 
         $result = upsert_reference_items::execute('diretoria', [
             ['code' => '01', 'label' => 'Sao Paulo'],
@@ -72,7 +72,7 @@ final class upsert_reference_items_test extends \advanced_testcase {
 
         $items = array_fill(
             0,
-            \local_profilefield_repeatable\local\manager::MAX_BATCH_SIZE + 1,
+            \local_dictionaries\local\manager::MAX_BATCH_SIZE + 1,
             ['code' => 'x', 'label' => 'y']
         );
 
@@ -90,7 +90,7 @@ final class upsert_reference_items_test extends \advanced_testcase {
 
         $this->expectException(\moodle_exception::class);
         $this->expectExceptionMessage(
-            get_string('errorunknowndomain', 'local_profilefield_repeatable', 'missing_domain')
+            get_string('errorunknowndomain', 'local_dictionaries', 'missing_domain')
         );
         upsert_reference_items::execute('missing_domain', [['code' => '01', 'label' => 'X']]);
     }
