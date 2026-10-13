@@ -49,12 +49,13 @@ function xmldb_local_dictionaries_upgrade($oldversion) {
             }
         }
 
-        // The key columns are added with an empty default so existing rows satisfy NOT NULL; the default
-        // is dropped again below, after the backfill, to match install.xml.
+        // The key columns are declared without a default, as install.xml has them (XMLDB rewrites an empty
+        // string default on a NOT NULL char column to none and raises a debugging message); the generator
+        // fills existing rows with an empty string, which the backfill below replaces.
         $item = new xmldb_table('local_dictionaries_item');
         $keyfields = [
-            new xmldb_field('codekey', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, '', 'code'),
-            new xmldb_field('searchkey', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, '', 'label'),
+            new xmldb_field('codekey', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'code'),
+            new xmldb_field('searchkey', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'label'),
         ];
         $otherfields = [
             new xmldb_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'searchkey'),

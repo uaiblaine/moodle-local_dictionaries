@@ -134,6 +134,7 @@ final class upgrade_test extends \advanced_testcase {
         set_config('version', 2026042000, 'local_dictionaries');
         $this->expectOutputRegex($collided ? "/merged code 'São' \(item \d+\) into 'SAO'/" : '/^$/');
         $this->assertTrue(xmldb_local_dictionaries_upgrade(2026042000));
+        $this->assertDebuggingNotCalled();
         $this->assertEquals(2026042001, get_config('local_dictionaries', 'version'));
 
         // Schema: no difference to install.xml for this plugin's tables.
