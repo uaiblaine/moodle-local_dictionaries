@@ -30,7 +30,8 @@ namespace local_dictionaries;
  */
 final class api_test extends \advanced_testcase {
     /**
-     * Create the 'cities' domain with a few items.
+     * Create the 'uf' domain (states SP and PA) and the 'cities' domain, whose items name their
+     * state as parent; one city is inactive.
      *
      * @return void
      */

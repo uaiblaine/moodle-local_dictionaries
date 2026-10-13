@@ -27,8 +27,9 @@ jobs:
   # PHPUnit and Behat run on every runtime leg.
   #
   # profilefield_repeatable is the first consumer of the resolver API. It is
-  # installed beside this plugin so a contract break shows up here; it is a
-  # soft dependency of neither side.
+  # installed beside this plugin so a contract break shows up here; neither
+  # plugin lists the other in $plugin->dependencies (the consumer probes the
+  # resolver with class_exists()).
   ci-503:
     name: Moodle 5.03
     uses: moodle-an-hochschulen/moodle-workflows/.github/workflows/moodle-plugin-ci.yml@main

@@ -59,7 +59,7 @@ final class get_reference_labels_test extends \advanced_testcase {
     }
 
     /**
-     * Returns labels for known codes only, keyed by the caller's spelling.
+     * Returns labels for known codes only; unknown codes are left out.
      */
     public function test_execute_returns_resolved_labels(): void {
         $this->resetAfterTest();

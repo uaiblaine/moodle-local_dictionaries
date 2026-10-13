@@ -103,11 +103,9 @@ class create_domain_form extends moodleform {
         $mform->addElement('hidden', 'action', 'createdomain');
         $mform->setType('action', PARAM_ALPHA);
 
-        /* Distinct from the section header label: identical strings make the
-         * collapse toggle and the submit button indistinguishable for
-         * screen readers and UI tests alike. Named element instead of
-         * add_action_buttons(): two moodleforms share manage.php, and the
-         * default 'submitbutton' name would duplicate the DOM id. */
+        // A label distinct from the header's, or screen readers and Behat cannot tell the collapse
+        // toggle from the submit button. A named element rather than add_action_buttons(): two
+        // moodleforms share manage.php, and both default 'submitbutton' names would share one DOM id.
         $mform->addElement('submit', 'savedomainbutton', get_string('savedomain', 'local_dictionaries'));
         $mform->closeHeaderBefore('savedomainbutton');
     }

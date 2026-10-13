@@ -17,7 +17,8 @@
 namespace local_dictionaries\event;
 
 /**
- * Event fired once per batch of items written into one domain (web service call or CSV import).
+ * Event fired per batch of items written into one domain: once per web service call, once per
+ * committed chunk of a CSV import ({@see \local_dictionaries\local\manager::upsert_items_chunked()}).
  *
  * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine

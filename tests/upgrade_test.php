@@ -121,7 +121,9 @@ final class upgrade_test extends \advanced_testcase {
         $this->item($dom1, 'Ação', 'Ação  Imediata', 5);
         $other = $this->item($dom2, 'sao', 'Other domain', 5);
         $loser = $this->item($dom1, 'São', 'Loser', 10);
-        // The 0.4.1 unique index is case and accent sensitive on PostgreSQL only.
+        // The 0.4.1 unique index on (domainid, code) is case and accent sensitive on PostgreSQL, not under
+        // MariaDB's or MySQL's default collation. Where 'SAO' is stored beside 'São' ($collided), the
+        // upgrade has to merge the two.
         $collided = true;
         try {
             $this->item($dom1, 'SAO', 'Winner', 30);

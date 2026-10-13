@@ -74,7 +74,7 @@ final class search_items_test extends \advanced_testcase {
     }
 
     /**
-     * A restricted domain needs the view capability; the manager role has it.
+     * A restricted domain needs the view capability: a plain user is refused, the admin is not.
      */
     public function test_restricted_domain_needs_view_capability(): void {
         $this->resetAfterTest();
@@ -151,7 +151,7 @@ final class search_items_test extends \advanced_testcase {
         $this->assertTrue($response['error']);
         $this->assertSame('nopermissions', $response['exception']->errorcode);
 
-        // Control: the manager role may name the restricted parent domain.
+        // Control: the admin, who holds the view capability, may name the restricted parent domain.
         $this->setAdminUser();
         $response = $this->call(['domain' => 'open', 'query' => '', 'parentcode' => 'x', 'parentdomain' => 'restricted']);
         $this->assertFalse($response['error']);
@@ -182,7 +182,7 @@ final class search_items_test extends \advanced_testcase {
     }
 
     /**
-     * Labels leave the service with multilang resolved and tags stripped; the stored value stays raw.
+     * Labels leave the service through format_string(): tags stripped, '&' not escaped; the stored value stays raw.
      */
     public function test_labels_are_formatted_not_raw(): void {
         global $DB;

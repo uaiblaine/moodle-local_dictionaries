@@ -286,15 +286,17 @@ class manager {
      *
      * Each item is an array (or object) with 'code' and 'label' and, optionally, 'sortorder'
      * (int), 'active' (bool) and 'parentcode' (string; '' removes the parent). A key left out
-     * keeps the stored value. Codes are matched case-insensitively and keep the spelling of the
-     * last write. Parent codes are looked up in $parentdomain, or in the same domain when it is
-     * null, and may name items of the same batch. Fires one items_imported event per call.
+     * keeps the stored value. Codes are matched ignoring case and accents ({@see keys::code_key()})
+     * and keep the spelling of the last write. Parent codes are looked up in $parentdomain, or in
+     * the same domain when it is null, and may name items of the same batch. Fires one
+     * items_imported event per call with a non-empty $items.
      *
      * @param string $domainshortname
      * @param array $items
      * @param string|null $parentdomain Shortname of the domain holding the parent items.
      * @return array ['inserted' => int, 'updated' => int, 'ignored' => int]
-     * @throws moodle_exception On an unknown domain or parent, a self-parent or an over-long code.
+     * @throws moodle_exception On an unknown domain or parent, a self-parent, a parent cycle, an
+     *     over-long code or a code collision.
      */
     public function upsert_items(string $domainshortname, array $items, ?string $parentdomain = null): array {
         $this->ensure_tables_available();
@@ -319,10 +321,10 @@ class manager {
      * so an unknown parent leaves the domain untouched. When the parents live in the imported
      * domain itself, the items are ordered so that a parent is written in the same chunk as its
      * child or in an earlier one (a chunk resolves parents from the database and its own
-     * batch only), and a parent cycle is refused before any write. One items_imported event is fired per
-     * committed chunk, with that chunk's counts (items dropped before any write count in the
-     * first), so a failure in chunk N leaves an event for every chunk already committed. The web
-     * services keep the hard MAX_BATCH_SIZE limit instead.
+     * batch only), and a parent cycle is refused before any write. One items_imported event is
+     * fired per committed chunk, with that chunk's counts (items dropped before any write count in
+     * the first), so a failure in chunk N leaves an event for every chunk already committed. The
+     * web services keep the hard MAX_BATCH_SIZE limit instead.
      *
      * @param string $domainshortname
      * @param array $items See {@see self::upsert_items()}.
@@ -330,8 +332,8 @@ class manager {
      * @param string|null $parentdomain Shortname of the domain holding the parent items.
      * @return array ['inserted' => int, 'updated' => int, 'ignored' => int]
      * @throws coding_exception When the chunk size is not positive.
-     * @throws moodle_exception On an unknown domain or parent, a self-parent, a parent cycle or an
-     *     over-long code.
+     * @throws moodle_exception On an unknown domain or parent, a self-parent, a parent cycle, an
+     *     over-long code or a code collision.
      */
     public function upsert_items_chunked(
         string $domainshortname,
@@ -510,12 +512,12 @@ class manager {
      * Refuse a batch that would leave a parent cycle in the stored items.
      *
      * The parent column may point into another domain, so a cycle can run through two domains
-     * and the check does not depend on the parent domain. The graph a write would leave is
-     * followed from every item the batch gives a parent: an item of the batch takes its NEW
-     * parent (a cleared one ends the chain), any other item keeps its stored parentid. The stored
-     * links are read one level at a time with a single query per level and never twice, so the
-     * reads are bounded by the items the chains reach, and the visited sets end a walk that runs
-     * into a loop that was already stored. A new item can only close a loop through batch links.
+     * and the check runs whatever the parent domain. It walks the graph the write would leave,
+     * from every item the batch gives a parent: a batch item follows its new parent (a cleared
+     * one ends the chain), any other item its stored parentid. Stored links are read one level
+     * at a time, each id at most once, so the reads are bounded by the items the chains reach and
+     * stop even on a loop already stored; a chain that runs into such a loop is refused too. A
+     * new item can only close a loop through batch links.
      *
      * @param int $domainid
      * @param int $parentdomainid
@@ -814,8 +816,9 @@ class manager {
     /**
      * Fetch stored items of one domain by code key, keyed by their stored code key.
      *
-     * Callers look rows up by exact key: a collation that folds more than lowercase (MariaDB
-     * folds accents) may return a row stored under another key, which no lookup then finds.
+     * Callers look rows up by exact key: a collation that folds more than the code key does
+     * (MariaDB's utf8mb4_unicode_ci reads 'ß' as 'ss') may return a row stored under another key,
+     * which no lookup then finds.
      *
      * @param int $domainid
      * @param array $codekeys List of code keys.

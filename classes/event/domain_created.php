@@ -88,7 +88,7 @@ class domain_created extends \core\event\base {
     }
 
     /**
-     * The values in other are a shortname and counts, none of which needs mapping.
+     * The only value in other is the domain shortname, which needs no mapping.
      *
      * @return bool
      */

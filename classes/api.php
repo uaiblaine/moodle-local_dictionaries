@@ -25,7 +25,7 @@ use local_dictionaries\local\keys;
  *
  * Like {@see resolver}, {@see self::search()} runs no capability check and degrades to an empty
  * result when the tables are missing. The rule that decides who may read a domain is public:
- * {@see self::can_read()} and {@see self::require_read()}; the web services use the same two.
+ * {@see self::can_read()} and {@see self::require_read()}; the web services gate through the latter.
  *
  * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
@@ -71,7 +71,7 @@ class api {
      *
      * See {@see self::can_read()} for the rule. Call it before {@see self::search()} and before
      * any listing of a domain's items; resolving codes the viewer already sees (stored values
-     * in a record the viewer may read) needs no gate.
+     * in a record the viewer may read) through {@see resolver} needs no gate.
      *
      * @param string $domain Domain shortname as received.
      * @return void

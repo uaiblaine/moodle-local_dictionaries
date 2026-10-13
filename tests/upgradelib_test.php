@@ -33,6 +33,9 @@ final class upgradelib_test extends \advanced_testcase {
     /** @var bool Whether the unique codekey index was dropped to stage a 0.4.1 table. */
     private bool $indexdropped = false;
 
+    /** @var int Counter that gives every domain of a test its own shortname. */
+    private int $domaincount = 0;
+
     /**
      * The index of the (domainid, codekey) pair, as install.xml declares it.
      *
@@ -69,7 +72,7 @@ final class upgradelib_test extends \advanced_testcase {
             $this->indexdropped = true;
         }
         return (int) $DB->insert_record('local_dictionaries_domain', (object) [
-            'shortname' => 'dom' . random_int(1000, 9999),
+            'shortname' => 'dom' . ++$this->domaincount,
             'name' => 'Domain',
             'visibility' => 0,
             'revision' => 3,

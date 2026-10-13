@@ -36,7 +36,7 @@ function xmldb_local_dictionaries_upgrade($oldversion) {
     if ($oldversion < 2026042001) {
         require_once(__DIR__ . '/upgradelib.php');
 
-        // Every DDL call is guarded so a step interrupted halfway (DDL is not transactional) can run again.
+        // Every DDL call is guarded so a step interrupted halfway (its earlier DDL stays applied) can run again.
         $domain = new xmldb_table('local_dictionaries_domain');
         $fields = [
             new xmldb_field('description', XMLDB_TYPE_TEXT, null, null, null, null, null, 'name'),
@@ -50,7 +50,7 @@ function xmldb_local_dictionaries_upgrade($oldversion) {
         }
 
         // The key columns are declared without a default, as install.xml has them (XMLDB rewrites an empty
-        // string default on a NOT NULL char column to none and raises a debugging message); the generator
+        // string default on a NOT NULL char column to none and raises a debugging message); the DDL generator
         // fills existing rows with an empty string, which the backfill below replaces.
         $item = new xmldb_table('local_dictionaries_item');
         $keyfields = [
@@ -71,11 +71,6 @@ function xmldb_local_dictionaries_upgrade($oldversion) {
         local_dictionaries_backfill_item_keys();
         foreach (local_dictionaries_merge_codekey_collisions() as $message) {
             mtrace($message);
-        }
-
-        foreach ($keyfields as $field) {
-            $field->setDefault(null);
-            $dbman->change_field_default($item, $field);
         }
 
         $olduix = new xmldb_index('domainid_code_uix', XMLDB_INDEX_UNIQUE, ['domainid', 'code']);

@@ -58,8 +58,9 @@ final class domains {
     /**
      * Return the recorded row of one domain (id, shortname, visibility, revision), or null.
      *
-     * Read through a request cache: one query per domain and request. The caller must have
-     * checked {@see self::tables_available()} and normalised the shortname.
+     * Read through a request cache: one query per existing domain and request (a missing domain
+     * is not cached). The caller must have checked {@see self::tables_available()} and
+     * normalised the shortname.
      *
      * @param string $shortname A shortname already normalised by {@see keys::domain()}.
      * @return \stdClass|null

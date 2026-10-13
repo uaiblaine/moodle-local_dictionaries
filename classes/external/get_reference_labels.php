@@ -53,13 +53,13 @@ class get_reference_labels extends external_api {
     /**
      * Resolve labels for codes.
      *
-     * validate_context() runs require_login(); guests are refused on top of it. A domain
-     * recorded as open to logged-in users needs no capability; any other needs
-     * local/dictionaries:view.
+     * validate_context() runs require_login() but lets the guest user through, so guests are
+     * refused on top of it; the domain is gated by {@see \local_dictionaries\api::require_read()}.
      *
      * @param string $domain
      * @param array $codes
-     * @return array ['items' => list of ['code', 'label']], keyed by the caller's code spelling.
+     * @return array ['items' => list of ['code' => code as the caller spelled it, 'label' => formatted label]];
+     *     unknown codes are left out.
      * @throws invalid_parameter_exception When the parameters are invalid or the batch is too large.
      * @throws \moodle_exception When the user is not logged in or is the guest user.
      * @throws \required_capability_exception When the domain is restricted and the user lacks the view capability.

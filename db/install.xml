@@ -28,7 +28,7 @@
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="domainid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="code" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Code as last written, spelling preserved"/>
-        <FIELD NAME="codekey" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Lowercased code; the unique and lookup key"/>
+        <FIELD NAME="codekey" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Code folded for case and accents; the unique and lookup key"/>
         <FIELD NAME="label" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="searchkey" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Label lowercased with accents removed, cut at 255 characters"/>
         <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
