@@ -7,6 +7,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- `\local_dictionaries\api::lookup()`: looks up many codes of one domain for server-side
+  validation (stored code, raw label, active flag, parent code and parent domain), matching like
+  `resolve_bulk()`. It runs no capability check and returns inactive items too.
 - `\local_dictionaries\api::list_domains()`: a public listing of the domains (shortname, raw name
   and description, visibility, active item count, parent domain) for consumer plugins' definition
   forms. It runs no capability check.

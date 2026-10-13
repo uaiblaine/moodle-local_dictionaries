@@ -17,9 +17,9 @@ no production site had it). Supports Moodle **4.5 through 5.3**
 (`$plugin->requires = 2024100700`, `$plugin->supported = [405, 503]`),
 MATURITY_ALPHA. CI is the moodle-an-hochschulen reusable workflow, one job per
 supported branch in `.github/workflows/ci.yml` — **update those jobs when
-`supported` changes**. Not yet in `~/dev/moodle-dev/plugins.conf`, so no stack
-mounts it: build AMD with the docker command below and leave PHPUnit and Behat
-to `mdl ci`.
+`supported` changes**. Mounted into the stacks at `local/dictionaries` per
+`~/dev/moodle-dev/plugins.conf` (`auto`): `mdl grunt m502 local/dictionaries`
+builds AMD and `mdl phpunit <stack> local/dictionaries/...` runs tests.
 
 ## Agent orchestration budget (fleet rule, repeated here on purpose)
 
@@ -54,10 +54,8 @@ definition, and none runs on the session model.
 mdl ci moodle-local_dictionaries --only phpcs,phpdoc,validate,savepoints,mustache,grunt   # static gates
 mdl ci moodle-local_dictionaries --matrix --behat      # the pre-merge gate (main session only)
 xmllint --noout --schema ~/dev/moodle-503/public/lib/xmldb/xmldb.xsd db/install.xml
-# AMD build while the plugin is unmounted; rmdir the empty moodle-502/public/local/dictionaries
-# stub docker leaves behind, or core reports a broken plugin on every command.
-docker run --rm -v ~/dev/moodle-502:/app -v ~/dev/moodle-local_dictionaries:/app/public/local/dictionaries \
-  -w /app node:22-bookworm bash -lc "npx --no-install grunt amd --root=public/local/dictionaries"
+mdl grunt m502 local/dictionaries                     # rebuild amd/build (commit with src)
+mdl phpunit m502 local/dictionaries/tests/api_test.php # one test file on a stack
 ```
 
 Behat locator note: the manage page has two forms with identical "Domain
@@ -69,7 +67,7 @@ shortname" labels — always scope with
 ```
 manage.php                  Admin page: domain create/edit, CSV import, domain list (admin_externalpage)
 classes/resolver.php        Public read API (resolve, resolve_bulk, domain_exists, DOMAIN_PATTERN)
-classes/api.php             Public search API + VISIBILITY_* constants
+classes/api.php             Public search, lookup and domain-list API + VISIBILITY_* constants
 classes/local/keys.php      The ONLY derivation of shortnames, code keys and search keys
 classes/local/domain_rows.php Rows of the manage page's domain list (names filtered, escaped once by the template)
 classes/local/domains.php   Table availability + request-cached domain rows (id, visibility, revision)
@@ -84,7 +82,7 @@ tests/generator/lib.php     create_domain, create_item (through the manager)
 ## Architecture gotchas
 
 - **The public API is a contract.** `resolver` (method names, signatures,
-  `DOMAIN_PATTERN`) and `api::search()` are probed by consumers with
+  `DOMAIN_PATTERN`) and `api` (`search()`, `lookup()`, `list_domains()`, `can_read()`) are probed by consumers with
   `class_exists()`; rename nothing without a consumer change in the same step.
   Consumers must read `resolver::DOMAIN_PATTERN`, not copy it.
 - **Read paths degrade, write paths throw.** `resolver` and `api` return empty

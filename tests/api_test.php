@@ -352,4 +352,106 @@ final class api_test extends \advanced_testcase {
         $this->setAdminUser();
         $this->assertTrue(api::can_read('nowhere'));
     }
+
+    /**
+     * Lookup returns stored code, raw label, active flag and parent, keyed by the caller's spelling.
+     */
+    public function test_lookup_fields_parent_and_caller_spelling(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+
+        $result = api::lookup('cities', ['3550308', ' 9999999 ', 'nope', '']);
+        $this->assertSame([
+            '3550308' => [
+                'code' => '3550308',
+                'label' => 'São Paulo',
+                'active' => true,
+                'parentcode' => 'SP',
+                'parentdomain' => 'uf',
+            ],
+            '9999999' => [
+                'code' => '9999999',
+                'label' => 'Paulo Afonso extinct',
+                'active' => false,
+                'parentcode' => 'PA',
+                'parentdomain' => 'uf',
+            ],
+        ], $result);
+
+        // Case is folded, the stored spelling comes back, and an item without a parent says so.
+        $result = api::lookup('UF', ['sp', 'Pa']);
+        $this->assertSame(['sp', 'Pa'], array_keys($result));
+        $this->assertSame('SP', $result['sp']['code']);
+        $this->assertSame('Pará', $result['Pa']['label']);
+        $this->assertNull($result['sp']['parentcode']);
+        $this->assertNull($result['sp']['parentdomain']);
+    }
+
+    /**
+     * Accents are folded like the resolver does, and a tree inside one domain names that domain.
+     */
+    public function test_lookup_folds_accents_and_reports_a_same_domain_parent(): void {
+        $this->resetAfterTest();
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+        $generator->create_domain(['shortname' => 'tree']);
+        $generator->create_item(['domain' => 'tree', 'code' => 'Ação', 'label' => 'Action']);
+        $generator->create_item(['domain' => 'tree', 'code' => 'leaf', 'label' => 'Leaf', 'parentcode' => 'acao']);
+
+        $result = api::lookup('tree', ['ACAO', 'leaf']);
+        $this->assertSame('Ação', $result['ACAO']['code']);
+        $this->assertSame('Ação', $result['leaf']['parentcode']);
+        $this->assertSame('tree', $result['leaf']['parentdomain']);
+    }
+
+    /**
+     * A code whose key differs from a stored one is not looked up as it, even where the collation folds the two.
+     *
+     * MariaDB (utf8mb4_unicode_ci) returns the 'ss' row for the key 'ß'; PostgreSQL does not.
+     */
+    public function test_lookup_ignores_rows_the_collation_folds_onto_another_key(): void {
+        $this->resetAfterTest();
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+        $generator->create_domain(['shortname' => 'folds']);
+        $generator->create_item(['domain' => 'folds', 'code' => 'ss', 'label' => 'Double s']);
+
+        $this->assertSame([], api::lookup('folds', ['ß']));
+        // Control: the stored spelling is found.
+        $this->assertSame(['ss'], array_keys(api::lookup('folds', ['ss'])));
+    }
+
+    /**
+     * Unknown and invalid domains and empty code lists give an empty result.
+     */
+    public function test_lookup_degrades(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+
+        $this->assertSame([], api::lookup('nowhere', ['SP']));
+        $this->assertSame([], api::lookup('Bad Domain!', ['SP']));
+        $this->assertSame([], api::lookup('uf', []));
+        $this->assertSame([], api::lookup('uf', ['', '  ']));
+    }
+
+    /**
+     * One query for the items and one for their parents, however many codes are asked for.
+     */
+    public function test_lookup_query_count(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->create_cities();
+        // Warm the request cache of the domain record.
+        api::lookup('cities', ['3550308']);
+        api::lookup('uf', ['SP']);
+
+        $reads = $DB->perf_get_reads();
+        $this->assertCount(5, api::lookup('cities', ['3550308', '3548708', '3509502', '1501402', '1500800']));
+        $this->assertSame(2, $DB->perf_get_reads() - $reads);
+
+        // Items without a parent need no second query.
+        $reads = $DB->perf_get_reads();
+        $this->assertCount(2, api::lookup('uf', ['SP', 'PA']));
+        $this->assertSame(1, $DB->perf_get_reads() - $reads);
+    }
 }

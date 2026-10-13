@@ -74,6 +74,8 @@ offers them.
     ?string $parentdomain = null
 ): array;
 // ['items' => [['code' => ..., 'label' => ...], ...], 'hasmore' => bool]
+\local_dictionaries\api::lookup(string $domain, array $codes): array;
+// Keyed by the caller's spelling: ['code', 'label', 'active', 'parentcode', 'parentdomain']; unknown codes absent.
 \local_dictionaries\api::list_domains(): array;
 // [['shortname', 'name', 'description', 'visibility', 'itemcount', 'parentdomain'], ...] by name.
 \local_dictionaries\api::can_read(string $domain, ?int $userid = null): bool;
@@ -99,6 +101,13 @@ ones included, so show it only to users who configure fields. `name` and `descri
 (apply `format_string()`); `itemcount` counts active items; `parentdomain` is the shortname of the
 domain holding the parents of the domain's items when they all sit in one domain (itself
 included), and null when no item has a parent or the parents are in more than one domain.
+
+`api::lookup()` is for server-side validation of values a consumer has already decided to accept
+from the user (a form the user may submit): it runs no capability check, returns inactive items
+too (`active` false) with their stored code, raw label and parent (`parentcode` with the domain
+holding it, `parentdomain`), and matches codes like `resolve_bulk()`. It reads the database on
+every call (one query, plus one for the parents), so validation sees the current state. Never
+show its result as a listing; browsing goes through `require_read()` and `api::search()`.
 
 Search order: an item whose code equals the query, then labels starting with the query, then
 labels containing it; case and accents are ignored; inside each group by sort order, then
