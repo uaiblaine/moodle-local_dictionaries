@@ -385,6 +385,106 @@ final class manager_test extends \advanced_testcase {
     }
 
     /**
+     * A batch where two items name each other as parent is refused, with no row and no event.
+     */
+    public function test_upsert_items_refuses_parent_cycle_in_one_batch(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('org', 'Org');
+
+        $sink = $this->redirectEvents();
+        try {
+            $manager->upsert_items('org', [
+                ['code' => 'A', 'label' => 'A', 'parentcode' => 'B'],
+                ['code' => 'B', 'label' => 'B', 'parentcode' => 'A'],
+            ]);
+            $this->fail('A parent cycle must be refused.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errorparentcycle', $e->errorcode);
+        }
+        $this->assertSame(0, $DB->count_records('local_dictionaries_item'));
+        $this->assertCount(0, $sink->get_events());
+        $sink->close();
+    }
+
+    /**
+     * Data provider for the two write paths.
+     *
+     * @return array
+     */
+    public static function write_path_provider(): array {
+        return [
+            'upsert_items' => ['upsert_items'],
+            'upsert_items_chunked' => ['upsert_items_chunked'],
+        ];
+    }
+
+    /**
+     * A batch that closes a loop through rows already stored is refused on both write paths.
+     *
+     * @dataProvider write_path_provider
+     * @param string $method
+     */
+    public function test_parent_cycle_through_stored_rows_is_refused(string $method): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('org', 'Org');
+        $manager->upsert_items('org', [
+            ['code' => 'B', 'label' => 'B'],
+            ['code' => 'A', 'label' => 'A', 'parentcode' => 'B'],
+            ['code' => 'C', 'label' => 'C', 'parentcode' => 'A'],
+        ]);
+        $before = $DB->get_records_menu('local_dictionaries_item', [], 'id', 'codekey, parentid');
+
+        $sink = $this->redirectEvents();
+        // B -> C closes C -> A -> B -> C two levels away from the item the batch names.
+        try {
+            $manager->$method('org', [['code' => 'B', 'label' => 'B', 'parentcode' => 'C']]);
+            $this->fail('A parent cycle must be refused.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errorparentcycle', $e->errorcode);
+        }
+        $this->assertEquals($before, $DB->get_records_menu('local_dictionaries_item', [], 'id', 'codekey, parentid'));
+        $this->assertCount(0, $sink->get_events());
+        $sink->close();
+    }
+
+    /**
+     * Re-parenting that does not close a loop still works, including moves under a former child.
+     *
+     * @dataProvider write_path_provider
+     * @param string $method
+     */
+    public function test_reparenting_without_a_loop_is_written(string $method): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('org', 'Org');
+        $manager->upsert_items('org', [
+            ['code' => 'A', 'label' => 'A'],
+            ['code' => 'B', 'label' => 'B', 'parentcode' => 'A'],
+            ['code' => 'C', 'label' => 'C', 'parentcode' => 'B'],
+        ]);
+
+        // Swap roles in one batch: B leaves A and C leaves B, so no loop survives the write.
+        $manager->$method('org', [
+            ['code' => 'C', 'label' => 'C', 'parentcode' => 'A'],
+            ['code' => 'B', 'label' => 'B', 'parentcode' => 'C'],
+            ['code' => 'A', 'label' => 'A', 'parentcode' => ''],
+        ]);
+        $ids = $DB->get_records_menu('local_dictionaries_item', [], '', 'codekey, id');
+        $parents = $DB->get_records_menu('local_dictionaries_item', [], '', 'codekey, parentid');
+        $this->assertNull($parents['a']);
+        $this->assertEquals($ids['a'], $parents['c']);
+        $this->assertEquals($ids['c'], $parents['b']);
+    }
+
+    /**
      * Domain upsert stores description and visibility, and keeps them when they are not given.
      */
     public function test_upsert_domain_description_and_visibility(): void {

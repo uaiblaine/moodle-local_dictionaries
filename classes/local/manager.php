@@ -464,16 +464,17 @@ class manager {
     }
 
     /**
-     * Refuse a batch whose parent codes name no item, or name the item itself.
+     * Refuse a batch whose parent codes name no item, name the item itself or close a cycle.
      *
-     * A parent counts as present when it is stored in the parent domain or, when the parent
-     * domain is the item's own domain, when it is part of the batch.
+     * Runs before the first write of both write paths. A parent counts as present when it is
+     * stored in the parent domain or, when the parent domain is the item's own domain, when it is
+     * part of the batch.
      *
      * @param int $domainid
      * @param int $parentdomainid
      * @param array $normalised Map of codekey => normalised item.
      * @return void
-     * @throws moodle_exception On an unknown parent or a self-parent.
+     * @throws moodle_exception On an unknown parent, a self-parent or a parent cycle.
      */
     private function check_parents(int $domainid, int $parentdomainid, array $normalised): void {
         $parentkeys = [];
@@ -502,6 +503,107 @@ class manager {
                 implode(', ', array_slice(array_values($missing), 0, 10))
             );
         }
+        $this->check_parent_cycles($domainid, $parentdomainid, $normalised);
+    }
+
+    /**
+     * Refuse a batch that would leave a parent cycle in the stored items.
+     *
+     * The parent column may point into another domain, so a cycle can run through two domains
+     * and the check does not depend on the parent domain. The graph a write would leave is
+     * followed from every item the batch gives a parent: an item of the batch takes its NEW
+     * parent (a cleared one ends the chain), any other item keeps its stored parentid. The stored
+     * links are read one level at a time with a single query per level and never twice, so the
+     * reads are bounded by the items the chains reach, and the visited sets end a walk that runs
+     * into a loop that was already stored. A new item can only close a loop through batch links.
+     *
+     * @param int $domainid
+     * @param int $parentdomainid
+     * @param array $normalised Map of codekey => normalised item.
+     * @return void
+     * @throws moodle_exception When a parent chain returns to itself.
+     */
+    private function check_parent_cycles(int $domainid, int $parentdomainid, array $normalised): void {
+        global $DB;
+
+        $parentkeys = [];
+        foreach ($normalised as $item) {
+            if ($item['parentkey'] !== null && $item['parentkey'] !== '') {
+                $parentkeys[$item['parentkey']] = $item['parentkey'];
+            }
+        }
+        if (empty($parentkeys)) {
+            // Only clears: removing links cannot close a loop.
+            return;
+        }
+
+        // A node is a stored id, or 'n:<codekey>' for an item the batch inserts.
+        $existing = $this->fetch_ids_by_key($domainid, array_map('strval', array_keys($normalised)));
+        $parentids = $this->fetch_ids_by_key($parentdomainid, array_values($parentkeys));
+        $nodes = [];
+        foreach (array_keys($normalised) as $codekey) {
+            $nodes[(string)$codekey] = $existing[(string)$codekey] ?? ('n:' . $codekey);
+        }
+
+        $links = [];
+        $codes = [];
+        foreach ($normalised as $codekey => $item) {
+            if ($item['parentkey'] === null) {
+                continue;
+            }
+            $node = $nodes[(string)$codekey];
+            $codes[$node] = $item['code'];
+            if ($item['parentkey'] === '') {
+                $links[$node] = null;
+            } else if ($parentdomainid === $domainid && isset($nodes[$item['parentkey']])) {
+                $links[$node] = $nodes[$item['parentkey']];
+            } else {
+                $links[$node] = $parentids[$item['parentkey']];
+            }
+        }
+
+        // Read the stored parent of every node a chain reaches that the batch does not relink.
+        $stored = [];
+        $frontier = [];
+        foreach ($links as $target) {
+            if (is_int($target) && !isset($links[$target])) {
+                $frontier[$target] = $target;
+            }
+        }
+        while (!empty($frontier)) {
+            $fetched = [];
+            foreach (array_chunk($frontier, self::LOOKUP_CHUNK) as $chunk) {
+                [$insql, $params] = $DB->get_in_or_equal($chunk, SQL_PARAMS_NAMED, 'itemid');
+                $rows = $DB->get_records_select(domains::ITEM_TABLE, "id $insql", $params, '', 'id, parentid');
+                foreach ($chunk as $id) {
+                    $fetched[$id] = null;
+                }
+                foreach ($rows as $row) {
+                    $fetched[(int)$row->id] = $row->parentid === null ? null : (int)$row->parentid;
+                }
+            }
+            $stored += $fetched;
+            $frontier = [];
+            foreach ($fetched as $parent) {
+                if ($parent !== null && !array_key_exists($parent, $stored) && !isset($links[$parent])) {
+                    $frontier[$parent] = $parent;
+                }
+            }
+        }
+
+        $acyclic = [];
+        foreach (array_keys($links) as $start) {
+            $path = [];
+            $node = $start;
+            while ($node !== null && !isset($acyclic[$node])) {
+                if (isset($path[$node])) {
+                    throw new moodle_exception('errorparentcycle', 'local_dictionaries', '', $codes[$start]);
+                }
+                $path[$node] = true;
+                $node = array_key_exists($node, $links) ? $links[$node] : ($stored[$node] ?? null);
+            }
+            $acyclic += $path;
+        }
     }
 
     /**
@@ -509,11 +611,11 @@ class manager {
      *
      * Stable: file order is kept otherwise. Each item has one parent, so the chain above an item
      * is walked up to the first item already placed and emitted root first. Only meaningful when
-     * the parent domain is the imported domain.
+     * the parent domain is the imported domain. Cycles are refused beforehand by
+     * {@see self::check_parent_cycles()}.
      *
      * @param array $normalised Map of codekey => normalised item.
      * @return array The same map, parents first.
-     * @throws moodle_exception When the parents of the batch form a cycle.
      */
     private function order_parents_first(array $normalised): array {
         $ordered = [];
@@ -522,7 +624,8 @@ class manager {
             $key = $start;
             while ($key !== null && !isset($ordered[$key])) {
                 if (isset($path[$key])) {
-                    throw new moodle_exception('errorparentcycle', 'local_dictionaries', '', $normalised[$key]['code']);
+                    // Unreachable after check_parent_cycles(); stops the walk if it ever runs without it.
+                    break;
                 }
                 $path[$key] = true;
                 $parentkey = $normalised[$key]['parentkey'];
