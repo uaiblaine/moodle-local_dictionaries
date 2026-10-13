@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component local_profilefield_repeatable.
+ * Strings for component local_dictionaries.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -28,6 +28,8 @@ $string['csvfile'] = 'CSV file';
 $string['csvhelp'] = 'Format: code,label. Header line is optional.';
 $string['csvrequired'] = 'Upload a CSV file or paste CSV content.';
 $string['csvtext'] = 'CSV content (optional)';
+$string['dictionaries:manage'] = 'Manage reference dictionaries for profilefield repeatable';
+$string['dictionaries:view'] = 'View and resolve reference dictionaries for profilefield repeatable';
 $string['domaininvalid'] = 'Invalid domain shortname. Use lowercase letters, numbers, and underscore only.';
 $string['domainname'] = 'Domain name';
 $string['domainrequired'] = 'Domain shortname is required.';
@@ -43,10 +45,8 @@ $string['maxbatchsizeexceeded'] = 'Maximum batch size exceeded ({$a}).';
 $string['name'] = 'Name';
 $string['placeholderdomainname'] = 'Diretoria';
 $string['placeholderdomainshortname'] = 'diretoria';
-$string['pluginname'] = 'Profilefield repeatable references';
-$string['privacy:metadata'] = 'The local_profilefield_repeatable plugin stores reference dictionaries for code-to-label resolution.';
-$string['profilefield_repeatable:managereference'] = 'Manage reference dictionaries for profilefield repeatable';
-$string['profilefield_repeatable:viewreference'] = 'View and resolve reference dictionaries for profilefield repeatable';
+$string['pluginname'] = 'Reference dictionaries';
+$string['privacy:metadata'] = 'The local_dictionaries plugin stores reference dictionaries for code-to-label resolution.';
 $string['referencenotables'] = 'Reference tables are not available yet. Run plugin upgrade.';
 $string['savedomain'] = 'Save domain';
 $string['shortname'] = 'Shortname';

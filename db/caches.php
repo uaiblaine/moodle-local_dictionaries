@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Cache definitions for local_profilefield_repeatable.
+ * Cache definitions for local_dictionaries.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

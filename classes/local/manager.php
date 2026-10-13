@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable\local;
+namespace local_dictionaries\local;
 
 use cache;
 use coding_exception;
@@ -24,7 +24,7 @@ use moodle_exception;
 /**
  * Manager for reference domains and items.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -33,10 +33,10 @@ class manager {
     public const MAX_BATCH_SIZE = 5000;
 
     /** @var string Domain table name. */
-    private const DOMAIN_TABLE = 'local_profilefield_repeatable_domain';
+    private const DOMAIN_TABLE = 'local_dictionaries_domain';
 
     /** @var string Item table name. */
-    private const ITEM_TABLE = 'local_profilefield_repeatable_item';
+    private const ITEM_TABLE = 'local_dictionaries_item';
 
     /** @var string Domain shortname pattern. */
     private const DOMAIN_PATTERN = '/^[a-z0-9_]+$/';
@@ -68,7 +68,7 @@ class manager {
 
         $shortname = $this->normalise_domain_shortname($shortname);
         if ($shortname === '') {
-            throw new moodle_exception('domainrequired', 'local_profilefield_repeatable');
+            throw new moodle_exception('domainrequired', 'local_dictionaries');
         }
 
         $name = trim($name);
@@ -158,7 +158,7 @@ class manager {
 
         $domain = $this->get_domain_by_shortname($domainshortname);
         if (!$domain) {
-            throw new moodle_exception('errorunknowndomain', 'local_profilefield_repeatable', '', $domainshortname);
+            throw new moodle_exception('errorunknowndomain', 'local_dictionaries', '', $domainshortname);
         }
 
         $counts = [
@@ -337,7 +337,7 @@ class manager {
             $dbman->table_exists(new \xmldb_table(self::ITEM_TABLE));
 
         if (!$available) {
-            throw new coding_exception(get_string('referencenotables', 'local_profilefield_repeatable'));
+            throw new coding_exception(get_string('referencenotables', 'local_dictionaries'));
         }
     }
 
@@ -360,9 +360,9 @@ class manager {
      */
     private function purge_label_cache(): void {
         try {
-            cache::make('local_profilefield_repeatable', 'labels')->purge();
+            cache::make('local_dictionaries', 'labels')->purge();
         } catch (\Throwable $e) {
-            debugging('local_profilefield_repeatable: cache purge failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
+            debugging('local_dictionaries: cache purge failed: ' . $e->getMessage(), DEBUG_DEVELOPER);
         }
     }
 

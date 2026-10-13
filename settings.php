@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Admin settings for local_profilefield_repeatable.
+ * Admin settings for local_dictionaries.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -26,9 +26,9 @@ defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
     $ADMIN->add('localplugins', new admin_externalpage(
-        'local_profilefield_repeatable_manage',
-        get_string('managereference', 'local_profilefield_repeatable'),
-        new moodle_url('/local/profilefield_repeatable/manage.php'),
-        'local/profilefield_repeatable:managereference'
+        'local_dictionaries_manage',
+        get_string('managereference', 'local_dictionaries'),
+        new moodle_url('/local/dictionaries/manage.php'),
+        'local/dictionaries:manage'
     ));
 }

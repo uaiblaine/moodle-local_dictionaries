@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Uninstall script for local_profilefield_repeatable.
+ * Uninstall script for local_dictionaries.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -27,27 +27,19 @@
  *
  * @return bool
  */
-function xmldb_local_profilefield_repeatable_uninstall(): bool {
+function xmldb_local_dictionaries_uninstall(): bool {
     global $DB;
 
     $dbman = $DB->get_manager();
 
-    $itemtable = new xmldb_table('local_profilefield_repeatable_item');
+    $itemtable = new xmldb_table('local_dictionaries_item');
     if ($dbman->table_exists($itemtable)) {
         $dbman->drop_table($itemtable);
     }
 
-    $domaintable = new xmldb_table('local_profilefield_repeatable_domain');
+    $domaintable = new xmldb_table('local_dictionaries_domain');
     if ($dbman->table_exists($domaintable)) {
         $dbman->drop_table($domaintable);
-    }
-
-    // Legacy pre-rename tables may survive on installs that never upgraded.
-    foreach (['local_pfr_item', 'local_pfr_domain'] as $legacyname) {
-        $legacytable = new xmldb_table($legacyname);
-        if ($dbman->table_exists($legacytable)) {
-            $dbman->drop_table($legacytable);
-        }
     }
 
     return true;

@@ -1,4 +1,4 @@
-# Local Profilefield Repeatable
+# Local Dictionaries
 
 Local plugin to manage reference dictionaries for repeatable profile fields.
 
@@ -15,11 +15,11 @@ Local plugin to manage reference dictionaries for repeatable profile fields.
 - Import code and label pairs from CSV
 - Resolve labels by code via web services
 - Cache-backed bulk label resolution
-- Cross-database compatible schema (`local_profilefield_repeatable_domain`, `local_profilefield_repeatable_item`)
+- Cross-database compatible schema (`local_dictionaries_domain`, `local_dictionaries_item`)
 
 ## Installation
 
-1. Copy this plugin to `local/profilefield_repeatable`.
+1. Copy this plugin to `local/dictionaries`.
 2. Visit the Site Administration notifications page to complete the installation.
 
 ## Usage
@@ -30,7 +30,7 @@ Local plugin to manage reference dictionaries for repeatable profile fields.
 ## Web Services
 
 This plugin provides web service functions for upserting reference items and resolving labels.
-You must grant the capability `local/profilefield_repeatable:managereference` to allow access.
+You must grant the capability `local/dictionaries:manage` to allow access.
 
 ## Notes
 

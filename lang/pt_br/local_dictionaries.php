@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component local_profilefield_repeatable.
+ * Strings for component local_dictionaries.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -28,6 +28,8 @@ $string['csvfile'] = 'Arquivo CSV';
 $string['csvhelp'] = 'Formato: codigo,rotulo. A linha de cabecalho e opcional.';
 $string['csvrequired'] = 'Envie um arquivo CSV ou cole o conteudo CSV.';
 $string['csvtext'] = 'Conteudo CSV (opcional)';
+$string['dictionaries:manage'] = 'Gerenciar dicionarios de referencia para campos de perfil repetiveis';
+$string['dictionaries:view'] = 'Ver e resolver dicionarios de referencia para campos de perfil repetiveis';
 $string['domaininvalid'] = 'Identificador de dominio invalido. Use apenas letras minusculas, numeros e sublinhado.';
 $string['domainname'] = 'Nome do dominio';
 $string['domainrequired'] = 'O identificador curto do dominio e obrigatorio.';
@@ -43,10 +45,8 @@ $string['maxbatchsizeexceeded'] = 'Tamanho maximo do lote excedido ({$a}).';
 $string['name'] = 'Nome';
 $string['placeholderdomainname'] = 'Diretoria';
 $string['placeholderdomainshortname'] = 'diretoria';
-$string['pluginname'] = 'Referencias repetiveis de campos de perfil';
-$string['privacy:metadata'] = 'O plugin local_profilefield_repeatable armazena dicionarios de referencia para resolver codigo em rotulo.';
-$string['profilefield_repeatable:managereference'] = 'Gerenciar dicionarios de referencia para campos de perfil repetiveis';
-$string['profilefield_repeatable:viewreference'] = 'Ver e resolver dicionarios de referencia para campos de perfil repetiveis';
+$string['pluginname'] = 'Dicionários de referência';
+$string['privacy:metadata'] = 'O plugin local_dictionaries armazena dicionarios de referencia para resolver codigo em rotulo.';
 $string['referencenotables'] = 'As tabelas de referencia ainda nao estao disponiveis. Execute a atualizacao do plugin.';
 $string['savedomain'] = 'Salvar dominio';
 $string['shortname'] = 'Identificador curto';

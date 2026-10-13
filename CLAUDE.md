@@ -1,4 +1,4 @@
-# Claude instructions for `local_profilefield_repeatable`
+# Claude instructions for `local_dictionaries`
 
 This file is auto-loaded as context whenever Claude works in this plugin's
 directory tree. It captures the **Moodle development standards** this plugin
@@ -46,7 +46,7 @@ definition, and none runs on the session model.
 ## Commands
 
 Run from the Moodle root (`/Volumes/N1TB/dev/github/moodle`; this plugin
-lives at `public/local/profilefield_repeatable`):
+lives at `public/local/dictionaries`):
 
 Repo layout (Moodle 5.x split): the webroot is `public/` (plugin code +
 `public/config.php`), but **core CLI scripts live in `admin/cli/` at the
@@ -57,7 +57,7 @@ hardcode `public/` inside plugin code (`manage.php` resolves config via
 
 | Command | What it does |
 |---------|--------------|
-| `xmllint --noout --schema public/lib/xmldb/xmldb.xsd public/local/profilefield_repeatable/db/install.xml` | Validate the XMLDB schema. (Core libs live under `public/` in this 5.x split layout; the bare `lib/xmldb/...` path does not exist.) |
+| `xmllint --noout --schema public/lib/xmldb/xmldb.xsd public/local/dictionaries/db/install.xml` | Validate the XMLDB schema. (Core libs live under `public/` in this 5.x split layout; the bare `lib/xmldb/...` path does not exist.) |
 
 This plugin has **no AMD/JS**. CI (moodle-an-hochschulen/moodle-workflows,
 full `moodle-plugin-ci install` per job) gates on: a static leg (`phplint`,
@@ -75,7 +75,7 @@ protected-ref gate; concurrent runs cancel superseded ones). There is no
 committed local wrapper — run checks through your own `moodle-plugin-ci`
 checkout before pushing. To read a failed job's raw log (the MAH
 reusable-workflow jobs often return empty from `gh run view --log-failed`):
-`gh api repos/uaiblaine/moodle-local_profilefield_repeatable/actions/jobs/<jobid>/logs`
+`gh api repos/uaiblaine/moodle-local_dictionaries/actions/jobs/<jobid>/logs`
 (get `<jobid>` from `gh run view <runid> --json jobs`).
 
 Behat locator note: the manage page has two forms with identical "Domain
@@ -89,9 +89,9 @@ Local raw PHPUnit (if wired up) reads `phpunit.xml` at the **repo root**
 ## Git / repos
 
 This plugin is its **own git repo**
-(`uaiblaine/moodle-local_profilefield_repeatable`, single branch `main`)
+(`uaiblaine/moodle-local_dictionaries`, single branch `main`)
 nested inside the Moodle checkout (branch `MOODLE_501_STABLE`): run git from
-the plugin dir or use `git -C public/local/profilefield_repeatable ...` —
+the plugin dir or use `git -C public/local/dictionaries ...` —
 git from the Moodle root won't see plugin changes. Note `cd` inside a
 compound Bash command doesn't persist (cwd resets between calls); prefer
 absolute paths or `git -C`.
@@ -106,11 +106,11 @@ The field plugin (`public/user/profile/field/repeatable`, repo
 **soft dependency** — it probes `class_exists(...resolver)` and
 `table_exists(...)` at runtime. Consequences on this side:
 
-- **The public surface is frozen:** class `\local_profilefield_repeatable\resolver`
+- **The public surface is frozen:** class `\local_dictionaries\resolver`
   with static `resolve(string $domain, string $code): ?string`,
   `resolve_bulk(string $domain, array $codes): array`, and
   `domain_exists(string $domain): bool`. The field plugin also reads the
-  table `local_profilefield_repeatable_domain` **directly** (its
+  table `local_dictionaries_domain` **directly** (its
   `define.class.php::get_missing_reference_domains()`). Renaming the class,
   the methods, or that table breaks the field plugin.
 - **Domain shortname pattern** `/^[a-z0-9_]+$/` is duplicated here
@@ -134,7 +134,7 @@ classes/
   privacy/provider.php       null_provider (reference data only, no personal data)
 db/
   install.xml                _domain + _item tables
-  access.php                 local/profilefield_repeatable:managereference
+  access.php                 local/dictionaries:manage
   caches.php                 'labels' application cache
   services.php               WS functions + custom service
   upgrade.php / uninstall.php
@@ -148,7 +148,7 @@ tests/                       manager_test, resolver_test, external/*_test,
 
 ### Table availability — two failure philosophies
 
-Tables are `local_profilefield_repeatable_domain` / `_item`, addressed by
+Tables are `local_dictionaries_domain` / `_item`, addressed by
 private class constants. An early release shipped `local_pfr_*` names; that
 is handled **only at upgrade time** (`db/upgrade.php` renames them; the
 runtime fallback was removed in 0.3.0 — don't reintroduce it) and
@@ -206,13 +206,13 @@ through `s()` because core notifications output their message as raw HTML.
 - Both functions `validate_parameters()` first, then
   `validate_context(context_system::instance())` + `require_capability()`.
   **Two capabilities, by direction:** reads require
-  `local/profilefield_repeatable:viewreference` (read captype; cloned from
+  `local/dictionaries:view` (read captype; cloned from
   managereference on upgrade via `clonepermissionsfrom`), writes require
-  `local/profilefield_repeatable:managereference` (write, `RISK_CONFIG`).
+  `local/dictionaries:manage` (write, `RISK_CONFIG`).
   Both are system-context, `manager` archetype. New read functions take
   viewreference; new write functions take managereference + the batch cap.
 - Registered in `db/services.php` (with the custom service
-  `local_profilefield_repeatable_api`); **registering or changing a function
+  `local_dictionaries_api`); **registering or changing a function
   there requires a `version.php` bump** — services install only on upgrade.
 
 ## Forms (moodleform)
@@ -220,7 +220,7 @@ through `s()` because core notifications output their message as raw HTML.
 Form class files sit under `classes/form/` and start with:
 
 ```php
-namespace local_profilefield_repeatable\form;
+namespace local_dictionaries\form;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -244,7 +244,7 @@ Every PHP file starts with the GPL block, then:
 /**
  * <One-line file description>.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -275,7 +275,7 @@ Moodle's `phpdoc --max-warnings 0` enforces:
 - Constants: `UPPER_SNAKE_CASE`
 - Properties: `lowercase` (no camel/snake mixing — single lowercase word
   where possible)
-- Frankenstyle prefix on globals: `local_profilefield_repeatable_*`
+- Frankenstyle prefix on globals: `local_dictionaries_*`
 
 ### CodeSniffer rules that bite
 
@@ -364,7 +364,7 @@ input must keep working.
   explicitly. Missing → XSD validation fails.
 - Validate with the xmllint command in the Commands table.
 - Upgrade steps end with
-  `upgrade_plugin_savepoint(true, <version>, 'local', 'profilefield_repeatable');`
+  `upgrade_plugin_savepoint(true, <version>, 'local', 'dictionaries');`
   — match `<version>` to the `version.php` bump.
 - Uniqueness is schema-enforced: `shortname_uix` on `_domain`,
   `domainid_code_uix` on `_item`. Upserts rely on these — keep reads
@@ -384,11 +384,11 @@ lives in the companion field plugin). Keep it that way. Also:
 
 ## Lang strings
 
-`lang/en/local_profilefield_repeatable.php` strings are **alphabetically
+`lang/en/local_dictionaries.php` strings are **alphabetically
 sorted** (CI validate enforces ordering) and
-`lang/pt_br/local_profilefield_repeatable.php` carries the **same keys** —
+`lang/pt_br/local_dictionaries.php` carries the **same keys** —
 add/remove strings in both files in the same commit. Required strings: one
-per capability (`profilefield_repeatable:managereference` — the `local/`
+per capability (`dictionaries:manage` — the `local/`
 prefix is dropped in the lang key), one per cache definition
 (`cachedef_labels`), `pluginname`, and `privacy:metadata`.
 
@@ -406,8 +406,8 @@ empty render.
 ## PHPUnit tests
 
 - Test files in `tests/<area>/<thing>_test.php`, namespace matching the
-  directory (`local_profilefield_repeatable` /
-  `local_profilefield_repeatable\external`), `final class <thing>_test
+  directory (`local_dictionaries` /
+  `local_dictionaries\external`), `final class <thing>_test
   extends \advanced_testcase`, `@covers` annotation on the class docblock.
 - Call `$this->resetAfterTest()` in every test that touches the DB.
 - External-function tests call the WS class statically after

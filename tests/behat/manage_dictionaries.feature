@@ -1,4 +1,4 @@
-@local @local_profilefield_repeatable @javascript
+@local @local_dictionaries @javascript
 Feature: Manage repeatable reference dictionaries
   In order to resolve repeatable field codes into labels
   As an admin

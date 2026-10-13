@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable\form;
+namespace local_dictionaries\form;
 
 use core_text;
 use moodleform;
@@ -26,7 +26,7 @@ require_once($CFG->libdir . '/formslib.php');
 /**
  * Form to create or update one reference domain.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -40,23 +40,23 @@ class create_domain_form extends moodleform {
         $mform->addElement(
             'header',
             'createdomainheader',
-            get_string('createdomain', 'local_profilefield_repeatable')
+            get_string('createdomain', 'local_dictionaries')
         );
 
         $mform->addElement(
             'text',
             'domainshortname',
-            get_string('domainshortname', 'local_profilefield_repeatable'),
+            get_string('domainshortname', 'local_dictionaries'),
             [
                 'maxlength' => 100,
                 'size' => 40,
-                'placeholder' => get_string('placeholderdomainshortname', 'local_profilefield_repeatable'),
+                'placeholder' => get_string('placeholderdomainshortname', 'local_dictionaries'),
             ]
         );
         $mform->setType('domainshortname', PARAM_RAW_TRIMMED);
         $mform->addRule(
             'domainshortname',
-            get_string('domainrequired', 'local_profilefield_repeatable'),
+            get_string('domainrequired', 'local_dictionaries'),
             'required',
             null,
             'client'
@@ -65,11 +65,11 @@ class create_domain_form extends moodleform {
         $mform->addElement(
             'text',
             'domainname',
-            get_string('domainname', 'local_profilefield_repeatable'),
+            get_string('domainname', 'local_dictionaries'),
             [
                 'maxlength' => 255,
                 'size' => 60,
-                'placeholder' => get_string('placeholderdomainname', 'local_profilefield_repeatable'),
+                'placeholder' => get_string('placeholderdomainname', 'local_dictionaries'),
             ]
         );
         $mform->setType('domainname', PARAM_TEXT);
@@ -82,7 +82,7 @@ class create_domain_form extends moodleform {
          * screen readers and UI tests alike. Named element instead of
          * add_action_buttons(): two moodleforms share manage.php, and the
          * default 'submitbutton' name would duplicate the DOM id. */
-        $mform->addElement('submit', 'savedomainbutton', get_string('savedomain', 'local_profilefield_repeatable'));
+        $mform->addElement('submit', 'savedomainbutton', get_string('savedomain', 'local_dictionaries'));
         $mform->closeHeaderBefore('savedomainbutton');
     }
 
@@ -98,9 +98,9 @@ class create_domain_form extends moodleform {
 
         $shortname = core_text::strtolower(trim((string)($data['domainshortname'] ?? '')));
         if ($shortname === '') {
-            $errors['domainshortname'] = get_string('domainrequired', 'local_profilefield_repeatable');
+            $errors['domainshortname'] = get_string('domainrequired', 'local_dictionaries');
         } else if (!preg_match('/^[a-z0-9_]+$/', $shortname)) {
-            $errors['domainshortname'] = get_string('domaininvalid', 'local_profilefield_repeatable');
+            $errors['domainshortname'] = get_string('domaininvalid', 'local_dictionaries');
         }
 
         return $errors;

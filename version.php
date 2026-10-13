@@ -17,16 +17,16 @@
 /**
  * Local profilefield repeatable reference dictionary version.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_profilefield_repeatable';
-$plugin->version = 2026061600;
+$plugin->component = 'local_dictionaries';
+$plugin->version = 2026042000;
 $plugin->requires = 2024100100;
 $plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.4.0';
+$plugin->release = '0.4.1';
 $plugin->supported = [405, 502];

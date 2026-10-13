@@ -14,15 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_profilefield_repeatable\external;
+namespace local_dictionaries\external;
 
 use core_external\external_api;
 
 /**
  * Tests for get_reference_labels external function.
  *
- * @package    local_profilefield_repeatable
- * @covers     \local_profilefield_repeatable\external\get_reference_labels
+ * @package    local_dictionaries
+ * @covers     \local_dictionaries\external\get_reference_labels
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -34,10 +34,10 @@ final class get_reference_labels_test extends \advanced_testcase {
         global $DB;
         $dbman = $DB->get_manager();
         if (
-            !$dbman->table_exists(new \xmldb_table('local_profilefield_repeatable_domain')) ||
-            !$dbman->table_exists(new \xmldb_table('local_profilefield_repeatable_item'))
+            !$dbman->table_exists(new \xmldb_table('local_dictionaries_domain')) ||
+            !$dbman->table_exists(new \xmldb_table('local_dictionaries_item'))
         ) {
-            $this->markTestSkipped('local_profilefield_repeatable tables are not available.');
+            $this->markTestSkipped('local_dictionaries tables are not available.');
         }
     }
 
@@ -49,7 +49,7 @@ final class get_reference_labels_test extends \advanced_testcase {
         $this->require_tables();
         $this->setAdminUser();
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
         $manager->upsert_items('diretoria', [
             ['code' => '01', 'label' => 'Sao Paulo'],
@@ -71,10 +71,10 @@ final class get_reference_labels_test extends \advanced_testcase {
         $this->require_tables();
         $this->setAdminUser();
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
 
-        $codes = array_fill(0, \local_profilefield_repeatable\local\manager::MAX_BATCH_SIZE + 1, 'x');
+        $codes = array_fill(0, \local_dictionaries\local\manager::MAX_BATCH_SIZE + 1, 'x');
 
         $this->expectException(\invalid_parameter_exception::class);
         get_reference_labels::execute('diretoria', $codes);
@@ -102,7 +102,7 @@ final class get_reference_labels_test extends \advanced_testcase {
         $this->require_tables();
         $this->setAdminUser();
 
-        $manager = new \local_profilefield_repeatable\local\manager();
+        $manager = new \local_dictionaries\local\manager();
         $manager->upsert_domain('diretoria', 'Diretoria');
         $manager->upsert_items('diretoria', [
             ['code' => '01', 'label' => 'Sao Paulo'],
@@ -111,7 +111,7 @@ final class get_reference_labels_test extends \advanced_testcase {
         $systemcontext = \context_system::instance();
         $roleid = $this->getDataGenerator()->create_role(['shortname' => 'refreader']);
         assign_capability(
-            'local/profilefield_repeatable:viewreference',
+            'local/dictionaries:view',
             CAP_ALLOW,
             $roleid,
             $systemcontext->id

@@ -17,7 +17,7 @@
 /**
  * Domain and CSV management UI.
  *
- * @package    local_profilefield_repeatable
+ * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,22 +25,22 @@
 require_once(__DIR__ . '/../../config.php');
 require_once($CFG->libdir . '/adminlib.php');
 
-admin_externalpage_setup('local_profilefield_repeatable_manage');
+admin_externalpage_setup('local_dictionaries_manage');
 
 $context = context_system::instance();
-require_capability('local/profilefield_repeatable:managereference', $context);
+require_capability('local/dictionaries:manage', $context);
 
-$PAGE->set_url(new moodle_url('/local/profilefield_repeatable/manage.php'));
+$PAGE->set_url(new moodle_url('/local/dictionaries/manage.php'));
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('admin');
-$PAGE->set_title(get_string('managereference', 'local_profilefield_repeatable'));
-$PAGE->set_heading(get_string('managereference', 'local_profilefield_repeatable'));
+$PAGE->set_title(get_string('managereference', 'local_dictionaries'));
+$PAGE->set_heading(get_string('managereference', 'local_dictionaries'));
 
-$manager = new \local_profilefield_repeatable\local\manager();
+$manager = new \local_dictionaries\local\manager();
 $error = '';
 
-$createform = new \local_profilefield_repeatable\form\create_domain_form($PAGE->url->out(false));
-$importform = new \local_profilefield_repeatable\form\import_csv_form($PAGE->url->out(false));
+$createform = new \local_dictionaries\form\create_domain_form($PAGE->url->out(false));
+$importform = new \local_dictionaries\form\import_csv_form($PAGE->url->out(false));
 
 if ($createdata = $createform->get_data()) {
     try {
@@ -48,7 +48,7 @@ if ($createdata = $createform->get_data()) {
             (string)$createdata->domainshortname,
             (string)($createdata->domainname ?? '')
         );
-        redirect($PAGE->url, get_string('domainsaved', 'local_profilefield_repeatable', $domain->shortname));
+        redirect($PAGE->url, get_string('domainsaved', 'local_dictionaries', $domain->shortname));
     } catch (Throwable $e) {
         $error = $e->getMessage();
     }
@@ -58,12 +58,12 @@ if ($importdata = $importform->get_data()) {
     try {
         $csvcontent = $importform->get_csv_content($importdata);
         if (trim($csvcontent) === '') {
-            throw new moodle_exception('csvrequired', 'local_profilefield_repeatable');
+            throw new moodle_exception('csvrequired', 'local_dictionaries');
         }
 
         $items = $manager->parse_csv_content($csvcontent);
         $summary = (object)$manager->upsert_items_chunked((string)$importdata->importdomainshortname, $items);
-        redirect($PAGE->url, get_string('importsummary', 'local_profilefield_repeatable', $summary));
+        redirect($PAGE->url, get_string('importsummary', 'local_dictionaries', $summary));
     } catch (Throwable $e) {
         $error = $e->getMessage();
     }
@@ -97,15 +97,15 @@ foreach ($domains as $domain) {
 }
 
 $templatecontext = [
-    'existingdomains' => get_string('existingdomains', 'local_profilefield_repeatable'),
-    'shortname' => get_string('shortname', 'local_profilefield_repeatable'),
-    'name' => get_string('name', 'local_profilefield_repeatable'),
-    'timemodified' => get_string('timemodified', 'local_profilefield_repeatable'),
+    'existingdomains' => get_string('existingdomains', 'local_dictionaries'),
+    'shortname' => get_string('shortname', 'local_dictionaries'),
+    'name' => get_string('name', 'local_dictionaries'),
+    'timemodified' => get_string('timemodified', 'local_dictionaries'),
     'none' => get_string('none'),
     'hasdomains' => !empty($domainrows),
     'domains' => $domainrows,
 ];
 
-echo $OUTPUT->render_from_template('local_profilefield_repeatable/manage', $templatecontext);
+echo $OUTPUT->render_from_template('local_dictionaries/manage', $templatecontext);
 
 echo $OUTPUT->footer();
