@@ -243,11 +243,8 @@ class api {
         $parentids = [];
         foreach ($rows as $row) {
             // A collation that folds more than the code key does (MariaDB reads 'ß' as 'ss') can
-            // return a row for a key nobody asked for; only exact key matches count, as in
-            // resolver::resolve_bulk().
-            if (!isset($wanted[(string)$row->codekey])) {
-                continue;
-            }
+            // return a row for a key nobody asked for; it stays unread because the lookup below
+            // uses the caller's key, not the row's.
             $bykey[(string)$row->codekey] = $row;
             if (!empty($row->parentid)) {
                 $parentids[(int)$row->parentid] = true;
