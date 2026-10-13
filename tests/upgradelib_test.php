@@ -148,6 +148,25 @@ final class upgradelib_test extends \advanced_testcase {
     }
 
     /**
+     * Merge messages escape the stored codes: mtrace() echoes them into the web upgrade page.
+     *
+     * @return void
+     */
+    public function test_collision_messages_escape_codes(): void {
+        $domainid = $this->domain();
+        $this->legacy_item($domainid, '<b>x</b>', 'Old', 10);
+        $this->legacy_item($domainid, '<B>X</B>', 'New', 20);
+        local_dictionaries_backfill_item_keys();
+
+        $messages = local_dictionaries_merge_codekey_collisions();
+
+        $this->assertCount(1, $messages);
+        $this->assertStringContainsString('&lt;b&gt;x&lt;/b&gt;', $messages[0]);
+        $this->assertStringNotContainsString('<b>', $messages[0]);
+        $this->assertStringNotContainsString('<B>', $messages[0]);
+    }
+
+    /**
      * A tie on timemodified keeps the highest id, and equal codes in different domains are left alone.
      */
     public function test_collision_tie_and_other_domains(): void {

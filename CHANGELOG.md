@@ -20,6 +20,10 @@ accents inside one domain (the most recently modified row survives, the others a
 each merge is printed), then replaces the `(domainid, code)` unique index with
 `(domainid, codekey)` and adds the search and parent indexes.
 
+The predefined service is renamed from "Profilefield Repeatable Reference API" to "Reference
+dictionaries API". Core matches a plugin's services by name, so the upgrade from 0.4.1 deletes
+the old service with its tokens and authorised users: issue the tokens again after upgrading.
+
 ### Changed
 - Component, namespaces, tables (`local_dictionaries_domain`, `local_dictionaries_item`),
   capabilities (`local/dictionaries:manage`, `local/dictionaries:view`), web services

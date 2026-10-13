@@ -115,8 +115,9 @@ function local_dictionaries_merge_codekey_collisions(int $chunksize = 200): arra
             foreach ($items as $item) {
                 $DB->set_field('local_dictionaries_item', 'parentid', $keeper->id, ['parentid' => $item->id]);
                 $DB->delete_records('local_dictionaries_item', ['id' => $item->id]);
-                $messages[] = "local_dictionaries: domain {$group->domainid}: merged code '{$item->code}' (item {$item->id}) "
-                    . "into '{$keeper->code}' (item {$keeper->id})";
+                // Codes are stored raw and mtrace() echoes into the web upgrade page: escape them.
+                $messages[] = 'local_dictionaries: domain ' . (int)$group->domainid . ": merged code '" . s($item->code)
+                    . "' (item " . (int)$item->id . ") into '" . s($keeper->code) . "' (item " . (int)$keeper->id . ')';
             }
             $DB->execute(
                 "UPDATE {local_dictionaries_domain} SET revision = revision + 1 WHERE id = :id",
