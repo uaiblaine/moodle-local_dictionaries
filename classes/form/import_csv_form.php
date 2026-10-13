@@ -104,11 +104,7 @@ class import_csv_form extends moodleform {
         $mform->addElement('hidden', 'action', 'importcsv');
         $mform->setType('action', PARAM_ALPHA);
 
-        /* Distinct from the section header label: identical strings make the
-         * collapse toggle and the submit button indistinguishable for
-         * screen readers and UI tests alike. Named element instead of
-         * add_action_buttons(): two moodleforms share manage.php, and the
-         * default 'submitbutton' name would duplicate the DOM id. */
+        // The submit button has its own label and name; see create_domain_form::definition().
         $mform->addElement('submit', 'importitemsbutton', get_string('importitems', 'local_dictionaries'));
         $mform->closeHeaderBefore('importitemsbutton');
     }

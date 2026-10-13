@@ -26,11 +26,9 @@ use local_dictionaries\local\keys;
  * The method names and signatures and {@see self::DOMAIN_PATTERN} are a contract with
  * consumers that probe this class at runtime (profilefield_repeatable). The resolver runs no
  * capability check, by design: resolving codes the viewer already sees (stored values in a
- * record the viewer may read) needs no gate. A caller that lets a user browse or search a
- * domain must call {@see api::require_read()} first; {@see api::can_read()} answers the same
- * question without throwing. It degrades to "no labels" when the
- * tables are missing or the cache layer fails, so a partial install never takes a consumer's
- * page down.
+ * record the viewer may read) needs no gate; browsing or searching a domain does, through
+ * {@see api::require_read()}. It degrades to "no labels" when the tables are missing or the
+ * cache layer fails, so a partial install never takes a consumer's page down.
  *
  * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
@@ -43,7 +41,7 @@ class resolver {
     /**
      * Resolve one code to its label.
      *
-     * Codes are case-insensitive: 'ABC' finds the item stored as 'abc'.
+     * Codes match ignoring case and accents: 'ABC' finds the item stored as 'abc'.
      *
      * @param string $domain Domain shortname.
      * @param string $code
@@ -125,8 +123,9 @@ class resolver {
             );
             foreach ($rows as $row) {
                 $codekey = (string)$row->codekey;
-                // A collation that folds more than lowercase (MariaDB folds accents) can return a
-                // row for a key nobody asked for; only exact key matches count.
+                // A collation that folds more than the code key does (MariaDB's utf8mb4_unicode_ci
+                // reads 'ß' as 'ss') can return a row for a key nobody asked for; only exact key
+                // matches count.
                 if (!isset($cachekeys[$codekey])) {
                     continue;
                 }

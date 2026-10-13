@@ -81,7 +81,7 @@ class upsert_reference_items extends external_api {
      * @return array ['inserted' => int, 'updated' => int, 'ignored' => int]
      * @throws invalid_parameter_exception When the parameters are invalid or the batch is too large.
      * @throws \moodle_exception When the user is not logged in or is the guest user, or on an
-     *     unknown domain or parent, a self-parent or an over-long code.
+     *     unknown domain or parent, a self-parent, a parent cycle, an over-long code or a code collision.
      * @throws \required_capability_exception When the user lacks local/dictionaries:manage.
      */
     public static function execute(string $domain, array $items, string $parentdomain = ''): array {

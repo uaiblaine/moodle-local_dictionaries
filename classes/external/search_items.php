@@ -62,10 +62,10 @@ class search_items extends external_api {
     /**
      * Search one domain.
      *
-     * validate_context() runs require_login(); guests are refused on top of it. A domain
-     * recorded as open to logged-in users needs no capability; any other needs
-     * local/dictionaries:view. When a parent code is given, the parent domain is gated the same
-     * way, so a search cannot probe the codes of a domain the user may not read.
+     * validate_context() runs require_login() but lets the guest user through, so guests are
+     * refused on top of it; the domain is gated by {@see api::require_read()}. When a parent code
+     * is given, the parent domain is gated the same way, so a search cannot probe the codes of a
+     * domain the user may not read.
      *
      * @param string $domain
      * @param string $query
