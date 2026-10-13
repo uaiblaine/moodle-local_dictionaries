@@ -20,7 +20,9 @@ The plugin owns two tables and stores no personal data.
 Requirements
 ------------
 
-- Moodle 4.5 or later (tested up to Moodle 5.3)
+- Moodle 5.3 (branch `MOODLE_503_STABLE`; releases `v5.3-rN`), PHP 8.3 or later. Other Moodle
+  versions have their own branches.
+- PostgreSQL 17+, MySQL 8.4+ or MariaDB 11.4+, as Moodle 5.3 requires
 
 
 Installation
