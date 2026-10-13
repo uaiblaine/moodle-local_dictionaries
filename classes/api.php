@@ -102,6 +102,84 @@ class api {
     }
 
     /**
+     * List every domain, for a form that offers them in a select.
+     *
+     * Runs NO capability check, like {@see resolver}: the listing exposes the name, description
+     * and visibility of every domain, restricted ones included, so a caller shows it only to
+     * users who configure fields (an admin page or a definition form behind its own capability),
+     * never on a learner-facing surface. Degrades to an empty list when the plugin tables are
+     * missing. Two queries however many domains exist: the domains, then one grouped query over
+     * the items.
+     *
+     * Each entry is an array with:
+     * - shortname (string);
+     * - name (string): raw, the consumer applies format_string();
+     * - description (string): raw, '' when none;
+     * - visibility (int): one of the VISIBILITY_* constants;
+     * - itemcount (int): active items only (inactive items still resolve but are not offered);
+     * - parentdomain (string|null): the shortname of the domain that holds the parents of the
+     *   domain's items. Every item of the domain that has a parent (active or not) is looked at:
+     *   when all of those parents sit in one domain, that domain is named (the domain itself for
+     *   a tree inside it); null when no item has a parent or the parents sit in more than one
+     *   domain. Items without a parent do not count against the rule.
+     *
+     * Ordered by name, then shortname.
+     *
+     * @return array List of the arrays described above.
+     */
+    public static function list_domains(): array {
+        global $DB;
+
+        if (!domains::tables_available()) {
+            return [];
+        }
+        $records = $DB->get_records(
+            domains::DOMAIN_TABLE,
+            null,
+            'name ASC, shortname ASC',
+            'id, shortname, name, description, visibility'
+        );
+        if (!$records) {
+            return [];
+        }
+
+        // One row per (domain, parent domain); a NULL parentid gives parent domain 0.
+        $sql = 'SELECT i.domainid, COALESCE(p.domainid, 0) AS parentdomainid,
+                       COUNT(1) AS total,
+                       SUM(CASE WHEN i.active = 1 THEN 1 ELSE 0 END) AS activecount
+                  FROM {' . domains::ITEM_TABLE . '} i
+             LEFT JOIN {' . domains::ITEM_TABLE . '} p ON p.id = i.parentid
+              GROUP BY i.domainid, COALESCE(p.domainid, 0)';
+        $itemcounts = [];
+        $parentdomains = [];
+        $rows = $DB->get_recordset_sql($sql);
+        foreach ($rows as $row) {
+            $domainid = (int)$row->domainid;
+            $itemcounts[$domainid] = ($itemcounts[$domainid] ?? 0) + (int)$row->activecount;
+            if ((int)$row->parentdomainid > 0) {
+                $parentdomains[$domainid][] = (int)$row->parentdomainid;
+            }
+        }
+        $rows->close();
+
+        $list = [];
+        foreach ($records as $record) {
+            $id = (int)$record->id;
+            $parents = $parentdomains[$id] ?? [];
+            $parentrecord = count($parents) === 1 ? ($records[$parents[0]] ?? null) : null;
+            $list[] = [
+                'shortname' => (string)$record->shortname,
+                'name' => (string)$record->name,
+                'description' => (string)($record->description ?? ''),
+                'visibility' => (int)$record->visibility,
+                'itemcount' => $itemcounts[$id] ?? 0,
+                'parentdomain' => $parentrecord ? (string)$parentrecord->shortname : null,
+            ];
+        }
+        return $list;
+    }
+
+    /**
      * Search the active items of one domain.
      *
      * Runs no capability check: a caller that lets a user browse a domain calls

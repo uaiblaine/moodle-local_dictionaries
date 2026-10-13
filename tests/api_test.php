@@ -151,6 +151,82 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * Domains come back by name with the raw fields, the active item count and the parent domain.
+     */
+    public function test_list_domains_fields_counts_and_order(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+        $generator->create_domain(['shortname' => 'aaa', 'name' => 'Zeta <b>', 'description' => 'Plain', 'visibility' => 1]);
+
+        $list = api::list_domains();
+        $byshortname = array_column($list, null, 'shortname');
+        // The generator names domains 'Domain 1', 'Domain 2' in creation order: uf, then cities.
+        $this->assertSame(['uf', 'cities', 'aaa'], array_column($list, 'shortname'));
+        $this->assertSame(
+            ['shortname', 'name', 'description', 'visibility', 'itemcount', 'parentdomain'],
+            array_keys($byshortname['aaa'])
+        );
+        $this->assertSame('Zeta <b>', $byshortname['aaa']['name']);
+        $this->assertSame('Plain', $byshortname['aaa']['description']);
+        $this->assertSame(api::VISIBILITY_LOGGEDIN, $byshortname['aaa']['visibility']);
+        $this->assertSame(0, $byshortname['aaa']['itemcount']);
+        $this->assertNull($byshortname['aaa']['parentdomain']);
+
+        // Five active cities and one inactive one; two states, none with a parent.
+        $this->assertSame(5, $byshortname['cities']['itemcount']);
+        $this->assertSame(2, $byshortname['uf']['itemcount']);
+        $this->assertSame('uf', $byshortname['cities']['parentdomain']);
+        $this->assertNull($byshortname['uf']['parentdomain']);
+    }
+
+    /**
+     * Parents in two domains give null; parents inside the domain itself name the domain; items
+     * without a parent do not count against the rule.
+     */
+    public function test_list_domains_parentdomain_mixed_and_self(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+
+        // One more city whose parent is a city: the parents now sit in two domains.
+        $generator->create_item(['domain' => 'cities', 'code' => '1', 'label' => 'Mixed', 'parentcode' => '3550308']);
+        $byshortname = array_column(api::list_domains(), null, 'shortname');
+        $this->assertNull($byshortname['cities']['parentdomain']);
+
+        $generator->create_domain(['shortname' => 'tree']);
+        $generator->create_item(['domain' => 'tree', 'code' => 'root', 'label' => 'Root']);
+        $generator->create_item(['domain' => 'tree', 'code' => 'leaf', 'label' => 'Leaf', 'parentcode' => 'root']);
+        $byshortname = array_column(api::list_domains(), null, 'shortname');
+        $this->assertSame('tree', $byshortname['tree']['parentdomain']);
+    }
+
+    /**
+     * Inactive items are not counted.
+     */
+    public function test_list_domains_counts_only_active_items(): void {
+        $this->resetAfterTest();
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+        $generator->create_domain(['shortname' => 'colors']);
+        $generator->create_item(['domain' => 'colors', 'code' => 'R', 'label' => 'Red']);
+        $generator->create_item(['domain' => 'colors', 'code' => 'G', 'label' => 'Green', 'active' => 0]);
+
+        $byshortname = array_column(api::list_domains(), null, 'shortname');
+        $this->assertSame(1, $byshortname['colors']['itemcount']);
+    }
+
+    /**
+     * No domain at all is an empty list.
+     */
+    public function test_list_domains_empty(): void {
+        $this->resetAfterTest();
+        $this->assertSame([], api::list_domains());
+    }
+
+    /**
      * Unknown and invalid domains give an empty result instead of an error.
      */
     public function test_unknown_domain_degrades(): void {

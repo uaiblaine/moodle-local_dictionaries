@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- `\local_dictionaries\api::list_domains()`: a public listing of the domains (shortname, raw name
+  and description, visibility, active item count, parent domain) for consumer plugins' definition
+  forms. It runs no capability check.
+
 ### Fixed
 - The manage page applies `format_string()` to the domain name and description, so multilang
   spans resolve (the template still escapes once).
