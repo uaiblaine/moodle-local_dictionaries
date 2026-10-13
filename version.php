@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_dictionaries';
-$plugin->version = 2026042000;
+$plugin->version = 2026042001;
 $plugin->requires = 2024100700;
 $plugin->maturity = MATURITY_ALPHA;
 $plugin->release = '0.5.0';

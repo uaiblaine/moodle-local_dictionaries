@@ -12,6 +12,14 @@ First release under the name `local_dictionaries`. The plugin was born from
 fields. It is a new plugin: no site had the old one in production, so nothing is migrated
 from it, and the old `local_pfr_*` upgrade step and uninstall cleanup are gone.
 
+A site that already installed the 0.4.1 rename (version 2026042000) is upgraded by
+`db/upgrade.php` (version 2026042001): it adds the domain `description`, `visibility` and
+`revision` and the item `codekey`, `searchkey`, `sortorder`, `active` and `parentid` columns,
+fills both keys from the existing rows, merges items whose codes are equal ignoring case and
+accents inside one domain (the most recently modified row survives, the others are deleted and
+each merge is printed), then replaces the `(domainid, code)` unique index with
+`(domainid, codekey)` and adds the search and parent indexes.
+
 ### Changed
 - Component, namespaces, tables (`local_dictionaries_domain`, `local_dictionaries_item`),
   capabilities (`local/dictionaries:manage`, `local/dictionaries:view`), web services
