@@ -3,8 +3,11 @@ name: ci
 # workflow_dispatch is the manual escape hatch: it lets a run be launched for
 # a push whose commits would otherwise skip CI, without pushing another commit.
 #
-# push is filtered to the branches that are merge targets, so a pushed feature
-# branch with an open pull request runs once (pull_request), not twice.
+# push is filtered to the branches that are merge targets. Without the filter
+# every push to a feature branch ran the whole pipeline AND the pull_request
+# event ran it again on the same commit - measured at 21 jobs and ~95 billable
+# minutes per run, so exactly double for no extra information. A branch with no
+# pull request open is covered by `mdl ci <repo> --matrix` locally.
 on:
   push:
     branches:
@@ -13,63 +16,28 @@ on:
   pull_request:
   workflow_dispatch:
 
-# Supersede a run when new commits arrive on the same pull request; never on
-# main, where each merge is the only run its commit gets.
+# Supersede a run when new commits arrive on the same pull request: pushing
+# three fixes in a row otherwise leaves three full pipelines running to the end.
+# Never on main - each merge there is the only run its commit will ever get, and
+# a second merge landing quickly must not cancel the first one's verdict.
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
-  # One reusable-workflow call per supported Moodle branch (version.php
-  # $plugin->supported = [405, 503]) — update these jobs when the supported
-  # range changes, in the same commit as the version.php change. The highest
-  # branch runs the full PHP x DB matrix; older branches run one DB only.
-  # PHPUnit and Behat run on every runtime leg.
+  # One reusable-workflow call: the Moodle version this branch supports (version.php
+  # $plugin->supported), with the full PHP x DB matrix. Every supported Moodle version has its
+  # own MOODLE_<NNN>_STABLE branch with its own job here; keep each branch's job on a merge
+  # between them. PHPUnit and Behat run on every runtime leg.
   #
-  # profilefield_repeatable is the first consumer of the resolver API. It is
-  # installed beside this plugin so a contract break shows up here; neither
-  # plugin lists the other in $plugin->dependencies (the consumer probes the
+  # profilefield_repeatable is the first consumer of the resolver API. It is installed beside
+  # this plugin, from its branch for the same Moodle version, so a contract break shows up
+  # here; neither plugin lists the other in $plugin->dependencies (the consumer probes the
   # resolver with class_exists()).
-  ci-503:
-    name: Moodle 5.03
-    uses: moodle-an-hochschulen/moodle-workflows/.github/workflows/moodle-plugin-ci.yml@main
-    with:
-      moodle-core-branch: MOODLE_503_STABLE
-      plugin-dependencies: |
-        uaiblaine/moodle-profilefield_repeatable,main
-
   ci-502:
     name: Moodle 5.02
     uses: moodle-an-hochschulen/moodle-workflows/.github/workflows/moodle-plugin-ci.yml@main
     with:
       moodle-core-branch: MOODLE_502_STABLE
-      one-db-only: true
       plugin-dependencies: |
-        uaiblaine/moodle-profilefield_repeatable,main
-
-  ci-501:
-    name: Moodle 5.01
-    uses: moodle-an-hochschulen/moodle-workflows/.github/workflows/moodle-plugin-ci.yml@main
-    with:
-      moodle-core-branch: MOODLE_501_STABLE
-      one-db-only: true
-      plugin-dependencies: |
-        uaiblaine/moodle-profilefield_repeatable,main
-
-  ci-500:
-    name: Moodle 5.00
-    uses: moodle-an-hochschulen/moodle-workflows/.github/workflows/moodle-plugin-ci.yml@main
-    with:
-      moodle-core-branch: MOODLE_500_STABLE
-      one-db-only: true
-      plugin-dependencies: |
-        uaiblaine/moodle-profilefield_repeatable,main
-
-  ci-405:
-    name: Moodle 4.05
-    uses: moodle-an-hochschulen/moodle-workflows/.github/workflows/moodle-plugin-ci.yml@main
-    with:
-      moodle-core-branch: MOODLE_405_STABLE
-      one-db-only: true
-      plugin-dependencies: |
-        uaiblaine/moodle-profilefield_repeatable,main
+        uaiblaine/moodle-profilefield_repeatable,MOODLE_502_STABLE
