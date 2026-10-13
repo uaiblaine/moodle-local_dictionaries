@@ -44,7 +44,7 @@ class upsert_reference_items extends external_api {
             'domain' => new external_value(PARAM_ALPHANUMEXT, 'Domain shortname'),
             'items' => new external_multiple_structure(
                 new external_single_structure([
-                    'code' => new external_value(PARAM_RAW_TRIMMED, 'Code; matched case-insensitively'),
+                    'code' => new external_value(PARAM_RAW_TRIMMED, 'Code; matched ignoring case and accents'),
                     'label' => new external_value(PARAM_RAW_TRIMMED, 'Label, stored raw'),
                     'parentcode' => new external_value(
                         PARAM_RAW_TRIMMED,

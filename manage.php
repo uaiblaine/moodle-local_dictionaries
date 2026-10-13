@@ -22,7 +22,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-use local_dictionaries\api;
+use local_dictionaries\local\domain_rows;
 use local_dictionaries\local\manager;
 
 require_once(__DIR__ . '/../../config.php');
@@ -142,20 +142,7 @@ if ($error !== '') {
 $createform->display();
 $importform->display();
 
-$domainrows = [];
-foreach ($domains as $domain) {
-    $domainrows[] = [
-        'shortname' => (string)$domain->shortname,
-        'name' => (string)$domain->name,
-        'description' => (string)($domain->description ?? ''),
-        'visibility' => (int)$domain->visibility === api::VISIBILITY_LOGGEDIN
-            ? get_string('visibilityloggedin', 'local_dictionaries')
-            : get_string('visibilityrestricted', 'local_dictionaries'),
-        'itemcount' => (int)$domain->itemcount,
-        'timemodified' => userdate((int)$domain->timemodified),
-        'editurl' => (new moodle_url($PAGE->url, ['edit' => (string)$domain->shortname]))->out(false),
-    ];
-}
+$domainrows = domain_rows::build($domains, $context, $PAGE->url);
 
 echo $OUTPUT->render_from_template('local_dictionaries/manage', [
     'hasdomains' => !empty($domainrows),

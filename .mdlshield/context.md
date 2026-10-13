@@ -59,7 +59,7 @@ administrators. It supports Moodle 4.5 through 5.3 on one branch and is declared
   services and the admin page.
 - **The read paths degrade, the manager throws.** Missing tables give "no labels" and an
   empty search; the write paths raise an error.
-- **Codes are case-insensitive**: `codekey` is the lowercased code and carries the unique
+- **Codes are case-insensitive**: `codekey` is the code with accents removed and lowercased and carries the unique
   index; `code` keeps the spelling of the last write.
 - **CSV imports are chunked, web service batches are capped.** Admin imports run in chunks
   of 5000, each in its own transaction, after every parent code has been checked; the web

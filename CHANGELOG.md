@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+### Fixed
+- The manage page applies `format_string()` to the domain name and description, so multilang
+  spans resolve (the template still escapes once).
+- The `code` parameter of `local_dictionaries_upsert_reference_items` and the CSV help now say
+  that codes are matched ignoring case and accents.
+- The upgrade to 2026042001 no longer runs a `change_field_default` loop that changed nothing.
+- The `codekey` column comment in `install.xml` says what the key is.
+
 ## [0.5.0] - 2026-10-12 (ALPHA)
 
 First release under the name `local_dictionaries`. The plugin was born from

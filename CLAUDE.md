@@ -71,12 +71,13 @@ manage.php                  Admin page: domain create/edit, CSV import, domain l
 classes/resolver.php        Public read API (resolve, resolve_bulk, domain_exists, DOMAIN_PATTERN)
 classes/api.php             Public search API + VISIBILITY_* constants
 classes/local/keys.php      The ONLY derivation of shortnames, code keys and search keys
+classes/local/domain_rows.php Rows of the manage page's domain list (names filtered, escaped once by the template)
 classes/local/domains.php   Table availability + request-cached domain rows (id, visibility, revision)
 classes/local/manager.php   Writes: domains, item upserts (chunked), CSV parser, events
 classes/local/access.php    WS read authorisation from the recorded domain visibility
 classes/external/           get_reference_labels, search_items (read), upsert_reference_items (write)
 classes/event/              domain_created, domain_updated, items_imported
-amd/src/autocomplete_transport.js   core/form-autocomplete transport (data-domain, data-parentcode)
+amd/src/autocomplete_transport.js   core/form-autocomplete transport (data-domain, data-parentcode, data-parentdomain)
 tests/generator/lib.php     create_domain, create_item (through the manager)
 ```
 
@@ -90,13 +91,14 @@ tests/generator/lib.php     create_domain, create_item (through the manager)
   results on missing tables or cache failure (a consumer's page must never
   break); `manager` throws `moodle_exception`. Keep new read paths silent and
   new write paths loud.
-- **Every key comes from `local\keys`.** `codekey` = `core_text::strtolower(code)`
-  carries the unique index; `searchkey` = label transliterated
-  (`core_text::specialtoascii`), lowercased, cut at 255. A path that derives
-  them differently breaks the unique index or the search. Lookups filter the
-  returned rows by exact key in PHP, because MariaDB's `utf8mb4_unicode_ci`
-  also folds accents; an accent-only collision on insert surfaces as
-  `errorcodecollision` (MariaDB only).
+- **Every key comes from `local\keys`.** `codekey` = the code with accents
+  removed (NFD, combining marks dropped) and lowercased; it carries the unique
+  index; `searchkey` = label transliterated (`core_text::specialtoascii`),
+  lowercased, cut at 255. A path that derives them differently breaks the unique
+  index or the search. Lookups still filter the returned rows by exact key in
+  PHP, and an insert collision surfaces as `errorcodecollision`, but only for
+  foldings the key does not do: MariaDB's `utf8mb4_unicode_ci` also folds
+  `ß` = `ss`.
 - **Cache invalidation is a revision, not a purge.** Label keys are
   `l<domainid>_<revision>_<sha1(codekey)>` (simple keys, no `:`). Any write
   that changes items must bump `revision` inside its transaction and call
@@ -113,8 +115,9 @@ tests/generator/lib.php     create_domain, create_item (through the manager)
   untouched. The chunked import also orders parents before their children (same-domain
   hierarchy) and refuses a parent cycle up front, because a chunk resolves parents only from the
   database and its own batch.
-- **Events**: one `items_imported` per `upsert_items()` call and one per chunked
-  import (totals), none for an empty batch.
+- **Events**: one `items_imported` per `upsert_items()` call; the chunked import
+  fires one per committed chunk with that chunk's counts (pre-write drops added to
+  the first), or one with the totals when nothing was written; none for an empty batch.
 
 ## Testing notes
 

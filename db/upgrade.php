@@ -73,11 +73,6 @@ function xmldb_local_dictionaries_upgrade($oldversion) {
             mtrace($message);
         }
 
-        foreach ($keyfields as $field) {
-            $field->setDefault(null);
-            $dbman->change_field_default($item, $field);
-        }
-
         $olduix = new xmldb_index('domainid_code_uix', XMLDB_INDEX_UNIQUE, ['domainid', 'code']);
         if ($dbman->index_exists($item, $olduix)) {
             $dbman->drop_index($item, $olduix);
