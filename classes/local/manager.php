@@ -316,7 +316,10 @@ class manager {
      * Insert or update items in bounded chunks, each in its own transaction.
      *
      * Every parent code is checked against the whole list before the first chunk is written,
-     * so an unknown parent leaves the domain untouched. One items_imported event is fired per
+     * so an unknown parent leaves the domain untouched. When the parents live in the imported
+     * domain itself, the items are ordered so that a parent is written in the same chunk as its
+     * child or in an earlier one (a chunk resolves parents from the database and its own
+     * batch only), and a parent cycle is refused before any write. One items_imported event is fired per
      * committed chunk, with that chunk's counts (items dropped before any write count in the
      * first), so a failure in chunk N leaves an event for every chunk already committed. The web
      * services keep the hard MAX_BATCH_SIZE limit instead.
@@ -327,7 +330,8 @@ class manager {
      * @param string|null $parentdomain Shortname of the domain holding the parent items.
      * @return array ['inserted' => int, 'updated' => int, 'ignored' => int]
      * @throws coding_exception When the chunk size is not positive.
-     * @throws moodle_exception On an unknown domain or parent, a self-parent or an over-long code.
+     * @throws moodle_exception On an unknown domain or parent, a self-parent, a parent cycle or an
+     *     over-long code.
      */
     public function upsert_items_chunked(
         string $domainshortname,
@@ -346,6 +350,9 @@ class manager {
 
         [$normalised, $ignored] = $this->normalise_items($items);
         $this->check_parents((int)$domain->id, (int)$parent->id, $normalised);
+        if ((int)$parent->id === (int)$domain->id) {
+            $normalised = $this->order_parents_first($normalised);
+        }
 
         $totals = [
             'inserted' => 0,
@@ -495,6 +502,37 @@ class manager {
                 implode(', ', array_slice(array_values($missing), 0, 10))
             );
         }
+    }
+
+    /**
+     * Order a batch so that every item follows its parent when the parent is in the batch too.
+     *
+     * Stable: file order is kept otherwise. Each item has one parent, so the chain above an item
+     * is walked up to the first item already placed and emitted root first. Only meaningful when
+     * the parent domain is the imported domain.
+     *
+     * @param array $normalised Map of codekey => normalised item.
+     * @return array The same map, parents first.
+     * @throws moodle_exception When the parents of the batch form a cycle.
+     */
+    private function order_parents_first(array $normalised): array {
+        $ordered = [];
+        foreach (array_keys($normalised) as $start) {
+            $path = [];
+            $key = $start;
+            while ($key !== null && !isset($ordered[$key])) {
+                if (isset($path[$key])) {
+                    throw new moodle_exception('errorparentcycle', 'local_dictionaries', '', $normalised[$key]['code']);
+                }
+                $path[$key] = true;
+                $parentkey = $normalised[$key]['parentkey'];
+                $key = ($parentkey !== null && $parentkey !== '' && isset($normalised[$parentkey])) ? $parentkey : null;
+            }
+            foreach (array_reverse(array_keys($path)) as $placed) {
+                $ordered[$placed] = $normalised[$placed];
+            }
+        }
+        return $ordered;
     }
 
     /**

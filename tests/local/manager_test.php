@@ -332,6 +332,59 @@ final class manager_test extends \advanced_testcase {
     }
 
     /**
+     * Chunked upsert writes a parent before its child even when the file lists the child first.
+     */
+    public function test_upsert_items_chunked_orders_parents_before_children(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('org', 'Org');
+
+        // The child, and a grandchild listed before its own parent, sit in earlier chunks than their parents.
+        $counts = $manager->upsert_items_chunked('org', [
+            ['code' => 'leaf', 'label' => 'Leaf', 'parentcode' => 'mid'],
+            ['code' => 'other', 'label' => 'Other'],
+            ['code' => 'mid', 'label' => 'Mid', 'parentcode' => 'root'],
+            ['code' => 'filler', 'label' => 'Filler'],
+            ['code' => 'root', 'label' => 'Root'],
+        ], 2);
+
+        $this->assertSame(['inserted' => 5, 'updated' => 0, 'ignored' => 0], $counts);
+        $ids = $DB->get_records_menu('local_dictionaries_item', [], '', 'codekey, id');
+        $parents = $DB->get_records_menu('local_dictionaries_item', [], '', 'codekey, parentid');
+        $this->assertEquals($ids['mid'], $parents['leaf']);
+        $this->assertEquals($ids['root'], $parents['mid']);
+        $this->assertNull($parents['root']);
+    }
+
+    /**
+     * Chunked upsert refuses a parent cycle before writing anything.
+     */
+    public function test_upsert_items_chunked_refuses_parent_cycle_before_writing(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('org', 'Org');
+
+        $sink = $this->redirectEvents();
+        try {
+            $manager->upsert_items_chunked('org', [
+                ['code' => 'free', 'label' => 'Free'],
+                ['code' => 'A', 'label' => 'A', 'parentcode' => 'B'],
+                ['code' => 'B', 'label' => 'B', 'parentcode' => 'A'],
+            ], 1);
+            $this->fail('A parent cycle must be refused.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errorparentcycle', $e->errorcode);
+        }
+        $this->assertSame(0, $DB->count_records('local_dictionaries_item'));
+        $this->assertCount(0, $sink->get_events());
+        $sink->close();
+    }
+
+    /**
      * Domain upsert stores description and visibility, and keeps them when they are not given.
      */
     public function test_upsert_domain_description_and_visibility(): void {

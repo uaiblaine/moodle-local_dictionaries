@@ -53,6 +53,7 @@ $string['editdomain'] = 'Edit {$a}';
 $string['errorcodecollision'] = 'The database already holds a code equal to "{$a}" under its collation rules (for example "ß" and "ss"). Rename one of them.';
 $string['errorcodetoolong'] = 'The code of item {$a} is longer than 255 characters.';
 $string['errornotables'] = 'The reference dictionary tables are not available yet. Run the plugin upgrade.';
+$string['errorparentcycle'] = 'Item {$a} is part of a parent cycle.';
 $string['errorparentself'] = 'Item {$a} cannot be its own parent.';
 $string['errorunknowndomain'] = 'Unknown domain: {$a}';
 $string['errorunknownparent'] = 'Unknown parent codes: {$a}';

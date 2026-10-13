@@ -110,7 +110,9 @@ tests/generator/lib.php     create_domain, create_item (through the manager)
 - **Parents are resolved after the batch's inserts** so an item may name a
   parent from the same batch; `check_parents()` runs before any write (and over
   the whole list in the chunked import), so an unknown parent leaves the domain
-  untouched.
+  untouched. The chunked import also orders parents before their children (same-domain
+  hierarchy) and refuses a parent cycle up front, because a chunk resolves parents only from the
+  database and its own batch.
 - **Events**: one `items_imported` per `upsert_items()` call and one per chunked
   import (totals), none for an empty batch.
 

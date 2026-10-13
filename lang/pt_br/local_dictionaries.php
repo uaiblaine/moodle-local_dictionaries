@@ -53,6 +53,7 @@ $string['editdomain'] = 'Editar {$a}';
 $string['errorcodecollision'] = 'O banco de dados já tem um código igual a "{$a}" pelas regras da sua collation (por exemplo "ß" e "ss"). Renomeie um deles.';
 $string['errorcodetoolong'] = 'O código do item {$a} tem mais de 255 caracteres.';
 $string['errornotables'] = 'As tabelas dos dicionários de referência ainda não estão disponíveis. Execute a atualização do plugin.';
+$string['errorparentcycle'] = 'O item {$a} faz parte de um ciclo de itens pai.';
 $string['errorparentself'] = 'O item {$a} não pode ser pai de si mesmo.';
 $string['errorunknowndomain'] = 'Domínio desconhecido: {$a}';
 $string['errorunknownparent'] = 'Códigos de item pai desconhecidos: {$a}';
