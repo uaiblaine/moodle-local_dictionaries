@@ -19,7 +19,11 @@ namespace local_dictionaries\form;
 /**
  * Tests for unique submit-button markup across the manage page forms.
  *
+ * Metadata stays in docblocks: the plugin supports Moodle 4.5, whose moodle-cs cannot read
+ * PHPUnit attributes.
+ *
  * @package    local_dictionaries
+ * @category   test
  * @covers     \local_dictionaries\form\create_domain_form
  * @covers     \local_dictionaries\form\import_csv_form
  * @copyright  2026 Anderson Blaine

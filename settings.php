@@ -24,10 +24,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-if ($hassiteconfig) {
+if ($hassiteconfig || has_capability('local/dictionaries:manage', context_system::instance())) {
     $ADMIN->add('localplugins', new admin_externalpage(
         'local_dictionaries_manage',
-        get_string('managereference', 'local_dictionaries'),
+        get_string('managedictionaries', 'local_dictionaries'),
         new moodle_url('/local/dictionaries/manage.php'),
         'local/dictionaries:manage'
     ));
