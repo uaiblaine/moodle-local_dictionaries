@@ -6,7 +6,8 @@ fields. Its first consumer is the user profile field plugin `profilefield_repeat
 an administrator page for domains and CSV import, a static resolver and a search API with a
 cache, three web service functions and one AMD module (an autocomplete transport). It has two
 tables of its own and stores **no personal data**: the rows are dictionaries entered by
-administrators. It supports Moodle 4.5 through 5.3 on one branch and is declared alpha.
+administrators. It has one branch per Moodle version (4.5, 5.1, 5.2 = `main`, 5.3), each
+declared stable.
 
 ## Who is trusted
 

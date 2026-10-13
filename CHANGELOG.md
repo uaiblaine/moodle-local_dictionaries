@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+First release on the one-branch-per-Moodle-version layout and the first `MATURITY_STABLE` one:
+`MOODLE_405_STABLE` (`v4.5-r1`), `MOODLE_501_STABLE` (`v5.1-r1`), `MOODLE_502_STABLE`
+(`v5.2-r1`, also `main`) and `MOODLE_503_STABLE` (`v5.3-r1`). Each branch numbers itself in its
+Moodle version's namespace (4.5 `20241007XX`, 5.1 `20251006XX`, 5.2 `20260420XX`, 5.3
+`20261005XX`), declares `$plugin->supported` for that version only, and runs CI against its own
+core branch with the full PHP x database matrix, installing `profilefield_repeatable` from its
+matching branch.
+
+### Removed
+- The pre-release upgrade step (2026042001, from the 0.4.1 rename), `db/upgradelib.php`, its tests
+  (`tests/upgrade_test.php`, `tests/upgradelib_test.php` and the 0.4.1 `install.xml` fixture) and
+  its mutation gate (U1). Its savepoint is above the 4.5, 5.1 and 5.2 branches' versions, so it
+  could never run there, and no 0.4.x install exists to need it on 5.3: the branches start fresh
+  in their version namespaces. A 0.5.0 install is numbered above the 4.5, 5.1 and 5.2 branches and
+  must be uninstalled first. `install.xml` carries `VERSION="2024100700"` on every branch.
+
 ### Added
 - `\local_dictionaries\api::lookup()`: looks up many codes of one domain for server-side
   validation (stored code, raw label, active flag, parent code and parent domain), matching like
@@ -19,7 +35,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
   spans resolve (the template still escapes once).
 - The `code` parameter of `local_dictionaries_upsert_reference_items` and the CSV help now say
   that codes are matched ignoring case and accents.
-- The upgrade to 2026042001 no longer runs a `change_field_default` loop that changed nothing.
 - The `codekey` column comment in `install.xml` says what the key is.
 
 ## [0.5.0] - 2026-10-12 (ALPHA)

@@ -13,11 +13,18 @@ tables `local_dictionaries_domain` and `local_dictionaries_item`; no personal
 data (`null_provider`). First consumer: the user profile field
 `profilefield_repeatable` (repo `uaiblaine/moodle-profilefield_repeatable`).
 Born from `local_profilefield_repeatable` 0.4.0 (renamed 2026-10, no migration:
-no production site had it). Supports Moodle **4.5 through 5.3**
-(`$plugin->requires = 2024100700`, `$plugin->supported = [405, 503]`),
-MATURITY_ALPHA. CI is the moodle-an-hochschulen reusable workflow, one job per
-supported branch in `.github/workflows/ci.yml` — **update those jobs when
-`supported` changes**. Mounted into the stacks at `local/dictionaries` per
+no production site had it). **One branch per Moodle version**:
+`MOODLE_405_STABLE`, `MOODLE_501_STABLE`, `MOODLE_502_STABLE` (= `main`) and
+`MOODLE_503_STABLE`, MATURITY_STABLE, releases `v<major>.<minor>-r<N>`. Each
+branch's `version.php` sets `requires` and `supported` to its own Moodle version
+and numbers itself in that version's namespace (4.5 `20241007XX`, 5.1
+`20251006XX`, 5.2 `20260420XX`, 5.3 `20261005XX`), and its
+`.github/workflows/ci.yml` has one moodle-an-hochschulen job for that core
+branch (full PHP x DB matrix) that installs `profilefield_repeatable` from the
+matching branch — **keep `version.php` and `ci.yml` per branch on a merge**.
+The r1 releases dropped the pre-release upgrade step; a new step is numbered in
+its own branch's namespace, and `install.xml` keeps `VERSION="2024100700"` on
+every branch. Mounted into the stacks at `local/dictionaries` per
 `~/dev/moodle-dev/plugins.conf` (`auto`): `mdl grunt m502 local/dictionaries`
 builds AMD and `mdl phpunit <stack> local/dictionaries/...` runs tests.
 

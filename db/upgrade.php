@@ -25,75 +25,12 @@
 /**
  * Upgrade the plugin.
  *
+ * Upgrade steps are numbered in the version namespace of the branch they live on, never in
+ * another branch's, and none exists yet for this one.
+ *
  * @param int $oldversion The version being upgraded from.
- * @return bool
+ * @return bool Always true.
  */
-function xmldb_local_dictionaries_upgrade($oldversion) {
-    global $DB;
-
-    $dbman = $DB->get_manager();
-
-    if ($oldversion < 2026042001) {
-        require_once(__DIR__ . '/upgradelib.php');
-
-        // Every DDL call is guarded so a step interrupted halfway (its earlier DDL stays applied) can run again.
-        $domain = new xmldb_table('local_dictionaries_domain');
-        $fields = [
-            new xmldb_field('description', XMLDB_TYPE_TEXT, null, null, null, null, null, 'name'),
-            new xmldb_field('visibility', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '0', 'description'),
-            new xmldb_field('revision', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'visibility'),
-        ];
-        foreach ($fields as $field) {
-            if (!$dbman->field_exists($domain, $field)) {
-                $dbman->add_field($domain, $field);
-            }
-        }
-
-        // The key columns are declared without a default, as install.xml has them (XMLDB rewrites an empty
-        // string default on a NOT NULL char column to none and raises a debugging message); the DDL generator
-        // fills existing rows with an empty string, which the backfill below replaces.
-        $item = new xmldb_table('local_dictionaries_item');
-        $keyfields = [
-            new xmldb_field('codekey', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'code'),
-            new xmldb_field('searchkey', XMLDB_TYPE_CHAR, '255', null, XMLDB_NOTNULL, null, null, 'label'),
-        ];
-        $otherfields = [
-            new xmldb_field('sortorder', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'searchkey'),
-            new xmldb_field('active', XMLDB_TYPE_INTEGER, '1', null, XMLDB_NOTNULL, null, '1', 'sortorder'),
-            new xmldb_field('parentid', XMLDB_TYPE_INTEGER, '10', null, null, null, null, 'active'),
-        ];
-        foreach (array_merge($keyfields, $otherfields) as $field) {
-            if (!$dbman->field_exists($item, $field)) {
-                $dbman->add_field($item, $field);
-            }
-        }
-
-        local_dictionaries_backfill_item_keys();
-        foreach (local_dictionaries_merge_codekey_collisions() as $message) {
-            mtrace($message);
-        }
-
-        $olduix = new xmldb_index('domainid_code_uix', XMLDB_INDEX_UNIQUE, ['domainid', 'code']);
-        if ($dbman->index_exists($item, $olduix)) {
-            $dbman->drop_index($item, $olduix);
-        }
-        $newuix = new xmldb_index('domainid_codekey_uix', XMLDB_INDEX_UNIQUE, ['domainid', 'codekey']);
-        if (!$dbman->index_exists($item, $newuix)) {
-            $dbman->add_index($item, $newuix);
-        }
-        $searchix = new xmldb_index('domainid_searchkey_ix', XMLDB_INDEX_NOTUNIQUE, ['domainid', 'searchkey']);
-        if (!$dbman->index_exists($item, $searchix)) {
-            $dbman->add_index($item, $searchix);
-        }
-        // The foreign key creates its own index (named by core); that index is what tells a re-run it is done.
-        $parentix = new xmldb_index('parentid', XMLDB_INDEX_NOTUNIQUE, ['parentid']);
-        if (!$dbman->find_index_name($item, $parentix)) {
-            $parentkey = new xmldb_key('parentid_fk', XMLDB_KEY_FOREIGN, ['parentid'], 'local_dictionaries_item', ['id']);
-            $dbman->add_key($item, $parentkey);
-        }
-
-        upgrade_plugin_savepoint(true, 2026042001, 'local', 'dictionaries');
-    }
-
+function xmldb_local_dictionaries_upgrade(int $oldversion): bool {
     return true;
 }
