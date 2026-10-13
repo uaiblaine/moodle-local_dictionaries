@@ -180,6 +180,108 @@ class api {
     }
 
     /**
+     * Look up many codes of one domain, with what a consumer needs to validate a stored value.
+     *
+     * For server-side validation of values a consumer has already decided to accept from this
+     * user (a form the user may submit): it runs NO capability check and lists inactive items
+     * too, so the consumer decides what an inactive code means. Never feed its result to a
+     * listing or a search box; {@see self::search()} after {@see self::require_read()} does that.
+     *
+     * Codes match like {@see resolver::resolve_bulk()}: ignoring case and accents, the result
+     * keyed by the caller's spelling of each code (trimmed); unknown codes are absent. Each entry
+     * is an array with:
+     * - code (string): the code as stored;
+     * - label (string): raw, the consumer escapes it;
+     * - active (bool);
+     * - parentcode (string|null): the stored code of the item's parent, null without one;
+     * - parentdomain (string|null): the shortname of the domain holding that parent.
+     *
+     * One query for the items and one for their parents, uncached (validation must read the
+     * current state). Degrades to an empty array when the plugin tables are missing.
+     *
+     * @param string $domain Domain shortname.
+     * @param array $codes List of codes (strings).
+     * @return array Map of caller code => the array described above.
+     */
+    public static function lookup(string $domain, array $codes): array {
+        global $DB;
+
+        $domain = keys::domain($domain);
+        if ($domain === '' || empty($codes) || !domains::tables_available()) {
+            return [];
+        }
+
+        // Caller spelling => code key; several spellings may share one key.
+        $callerkeys = [];
+        foreach ($codes as $code) {
+            $code = trim((string)$code);
+            if ($code === '') {
+                continue;
+            }
+            $callerkeys[$code] = keys::code_key(keys::clean_code($code));
+        }
+        if (empty($callerkeys)) {
+            return [];
+        }
+
+        $record = domains::get($domain);
+        if (!$record) {
+            return [];
+        }
+
+        $wanted = array_flip(array_values($callerkeys));
+        [$insql, $params] = $DB->get_in_or_equal(array_keys($wanted), SQL_PARAMS_NAMED, 'codekey');
+        $params['domainid'] = (int)$record->id;
+        $rows = $DB->get_records_select(
+            domains::ITEM_TABLE,
+            "domainid = :domainid AND codekey $insql",
+            $params,
+            '',
+            'id, code, codekey, label, active, parentid'
+        );
+        $bykey = [];
+        $parentids = [];
+        foreach ($rows as $row) {
+            // A collation that folds more than the code key does (MariaDB reads 'ß' as 'ss') can
+            // return a row for a key nobody asked for; it stays unread because the lookup below
+            // uses the caller's key, not the row's.
+            $bykey[(string)$row->codekey] = $row;
+            if (!empty($row->parentid)) {
+                $parentids[(int)$row->parentid] = true;
+            }
+        }
+
+        $parents = [];
+        if ($parentids) {
+            [$pinsql, $pparams] = $DB->get_in_or_equal(array_keys($parentids), SQL_PARAMS_NAMED, 'parentid');
+            $parents = $DB->get_records_sql(
+                'SELECT p.id, p.code, d.shortname
+                   FROM {' . domains::ITEM_TABLE . '} p
+                   JOIN {' . domains::DOMAIN_TABLE . '} d ON d.id = p.domainid
+                  WHERE p.id ' . $pinsql,
+                $pparams
+            );
+        }
+
+        $results = [];
+        foreach ($callerkeys as $code => $codekey) {
+            $row = $bykey[$codekey] ?? null;
+            if (!$row) {
+                continue;
+            }
+            $parent = empty($row->parentid) ? null : ($parents[(int)$row->parentid] ?? null);
+            $results[(string)$code] = [
+                'code' => (string)$row->code,
+                'label' => (string)$row->label,
+                'active' => (int)$row->active === 1,
+                'parentcode' => $parent ? (string)$parent->code : null,
+                'parentdomain' => $parent ? (string)$parent->shortname : null,
+            ];
+        }
+        return $results;
+    }
+
+    /**
      * Search the active items of one domain.
      *
      * Runs no capability check: a caller that lets a user browse a domain calls
