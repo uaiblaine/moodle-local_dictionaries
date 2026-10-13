@@ -25,6 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $capabilities = [
+    // Writes domains and items: the admin page and upsert_reference_items.
     'local/dictionaries:manage' => [
         'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
@@ -33,12 +34,12 @@ $capabilities = [
             'manager' => CAP_ALLOW,
         ],
     ],
+    // Reads restricted domains (visibility 0) through the web services.
     'local/dictionaries:view' => [
         'captype' => 'read',
         'contextlevel' => CONTEXT_SYSTEM,
         'archetypes' => [
             'manager' => CAP_ALLOW,
         ],
-        'clonepermissionsfrom' => 'local/dictionaries:manage',
     ],
 ];

@@ -22,12 +22,14 @@ use core_external\external_function_parameters;
 use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
+use core_external\util;
 use invalid_parameter_exception;
+use local_dictionaries\local\access;
 use local_dictionaries\local\manager;
 use local_dictionaries\resolver;
 
 /**
- * External API to resolve reference labels.
+ * Resolve the labels of codes in one domain.
  *
  * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
@@ -51,9 +53,16 @@ class get_reference_labels extends external_api {
     /**
      * Resolve labels for codes.
      *
+     * validate_context() runs require_login(); guests are refused on top of it. A domain
+     * recorded as open to logged-in users needs no capability; any other needs
+     * local/dictionaries:view.
+     *
      * @param string $domain
      * @param array $codes
-     * @return array
+     * @return array ['items' => list of ['code', 'label']], keyed by the caller's code spelling.
+     * @throws invalid_parameter_exception When the parameters are invalid or the batch is too large.
+     * @throws \moodle_exception When the user is not logged in or is the guest user.
+     * @throws \required_capability_exception When the domain is restricted and the user lacks the view capability.
      */
     public static function execute(string $domain, array $codes): array {
         $params = self::validate_parameters(self::execute_parameters(), [
@@ -61,9 +70,9 @@ class get_reference_labels extends external_api {
             'codes' => $codes,
         ]);
 
-        $context = context_system::instance();
-        self::validate_context($context);
-        require_capability('local/dictionaries:view', $context);
+        self::validate_context(context_system::instance());
+        access::require_not_guest();
+        access::require_domain_read($params['domain']);
 
         if (count($params['codes']) > manager::MAX_BATCH_SIZE) {
             throw new invalid_parameter_exception(
@@ -71,16 +80,14 @@ class get_reference_labels extends external_api {
             );
         }
 
-        $labels = resolver::resolve_bulk($params['domain'], $params['codes']);
-
+        $context = context_system::instance();
         $items = [];
-        foreach ($labels as $code => $label) {
+        foreach (resolver::resolve_bulk($params['domain'], $params['codes']) as $code => $label) {
             $items[] = [
                 'code' => (string)$code,
-                'label' => (string)$label,
+                'label' => util::format_string((string)$label, $context, true, ['escape' => false]),
             ];
         }
-
         return ['items' => $items];
     }
 
@@ -93,8 +100,8 @@ class get_reference_labels extends external_api {
         return new external_single_structure([
             'items' => new external_multiple_structure(
                 new external_single_structure([
-                    'code' => new external_value(PARAM_RAW_TRIMMED, 'Reference code'),
-                    'label' => new external_value(PARAM_RAW_TRIMMED, 'Resolved label'),
+                    'code' => new external_value(PARAM_RAW, 'Reference code, as the caller spelled it'),
+                    'label' => new external_value(PARAM_RAW, 'Formatted label (multilang resolved, tags stripped)'),
                 ])
             ),
         ]);

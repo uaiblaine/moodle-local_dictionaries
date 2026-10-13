@@ -2,98 +2,71 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.1] - 2026-10-12 (ALPHA)
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+## [0.5.0] - 2026-10-12 (ALPHA)
+
+First release under the name `local_dictionaries`. The plugin was born from
+`local_profilefield_repeatable` 0.4.0, the reference dictionaries of the
+`profilefield_repeatable` user profile field, renamed because nothing in it is tied to profile
+fields. It is a new plugin: no site had the old one in production, so nothing is migrated
+from it, and the old `local_pfr_*` upgrade step and uninstall cleanup are gone.
+
+A site that already installed the 0.4.1 rename (version 2026042000) is upgraded by
+`db/upgrade.php` (version 2026042001): it adds the domain `description`, `visibility` and
+`revision` and the item `codekey`, `searchkey`, `sortorder`, `active` and `parentid` columns,
+fills both keys from the existing rows, merges items whose codes are equal ignoring case and
+accents inside one domain (the most recently modified row survives, the others are deleted and
+each merge is printed), then replaces the `(domainid, code)` unique index with
+`(domainid, codekey)` and adds the search and parent indexes.
+
+The predefined service is renamed from "Profilefield Repeatable Reference API" to "Reference
+dictionaries API". Core matches a plugin's services by name, so the upgrade from 0.4.1 deletes
+the old service with its tokens and authorised users: issue the tokens again after upgrading.
 
 ### Changed
-- Renamed from local_profilefield_repeatable; no behaviour change.
-
-## [0.4.0] - 2026-06-16 (ALPHA)
+- Component, namespaces, tables (`local_dictionaries_domain`, `local_dictionaries_item`),
+  capabilities (`local/dictionaries:manage`, `local/dictionaries:view`), web services
+  (`local_dictionaries_*`, service `local_dictionaries_api`), admin page and URL
+  (`/local/dictionaries/manage.php`) and lang files carry the new name.
+- Supports Moodle 4.5 to 5.3 (`$plugin->supported = [405, 503]`).
+- Codes are case-insensitive on every database: a lowercased `codekey` carries the unique
+  index, `code` keeps the spelling of the last write, and `resolve_bulk()` keys its result by
+  the caller's spelling. Before, MariaDB collided `ABC` with `abc` and failed the batch while
+  PostgreSQL stored two items.
+- Codes are also accent-insensitive on every database (`são` and `sao` are one item): the
+  `codekey` folds accents by canonical decomposition, so PostgreSQL agrees with MariaDB.
+  `errorcodecollision` now covers only the foldings the key does not do (`ß`/`ss`).
+- `\local_dictionaries\api::can_read()` and `require_read()` are the public read gate; the web
+  services use them. `api::search()` takes `?string $parentdomain` and constrains the parent
+  to that domain (default: the searched domain), and `search_items` has a `parentdomain`
+  parameter whose domain needs read access too.
+- The read web services return labels with multilang resolved and tags stripped
+  (`core_external\util::format_string`, no entity escaping); the client still escapes.
+- `upsert_items_chunked()` fires one `items_imported` event per committed chunk.
+- The admin page is registered for holders of `local/dictionaries:manage` without
+  `moodle/site:config`.
+- The label cache keys on a per-domain revision bumped by every write, instead of purging the
+  whole cache.
+- The read web services refuse the guest user and decide on the domain's recorded visibility;
+  both read functions use a read-only session.
+- The CSV import parses quoted multi-line fields, strips a UTF-8 byte order mark, detects
+  comma, semicolon and tab delimiters, and reports rejected rows (invalid UTF-8, too few
+  columns, empty or over-long code) with line numbers instead of dropping them; duplicates
+  are counted, last row wins.
+- Codes longer than 255 characters are refused instead of being cut.
 
 ### Added
-- Moodle 5.2 support (`$plugin->supported = [405, 502]`); CI runs the full PHP × DB
-  matrix on Moodle 5.02 with 5.01/5.00/4.05 on PostgreSQL only.
-- Automated release to the Moodle plugins directory via `moodle-release.yml`
-  (triggered on `v*` tags).
-
-### Changed
-- CI runs on the moodle-an-hochschulen/moodle-workflows reusable workflow (PHPUnit +
-  Behat on every PHP × DB leg), cross-installing the companion `profilefield_repeatable`.
-
-## [0.3.0] - 2026-06-11 (ALPHA)
-
-### Added
-- Read-only capability `local/profilefield_repeatable:viewreference` for the
-  `get_reference_labels` web service (cloned from `managereference` on upgrade, so existing
-  role assignments keep read access); the write service still requires `managereference`
-- Behat coverage: domain creation, invalid-shortname rejection, and CSV import scenarios
+- Search data model: `searchkey`, `sortorder`, `active` and `parentid` on items;
+  `description`, `visibility` and `revision` on domains.
+- `\local_dictionaries\api::search()`, the `local_dictionaries_search_items` web service and
+  the `local_dictionaries/autocomplete_transport` AMD module for `core/form-autocomplete`.
+- `resolver::DOMAIN_PATTERN`, public, for consumers to read instead of copying.
+- Events `domain_created`, `domain_updated` and `items_imported` (one per batch, counts in
+  `other`).
+- Domain list shows item count and visibility, with an edit link; the domain form edits the
+  description and visibility; the import form takes an optional parent domain.
+- Test data generator (`create_domain`, `create_item`).
 
 ### Removed
-- Legacy `local_pfr_*` runtime table fallback in resolver and manager (the upgrade step
-  renames those tables, so the fallback was unreachable on current code); uninstall now also
-  drops stray legacy tables
-
-### Changed
-- Form submit buttons renamed to "Save domain" / "Import items": they shared their label with
-  the collapsible section headers, making the collapse toggle and the submit button
-  indistinguishable for assistive technology and UI tests
-- Submit buttons use named elements (`savedomainbutton` / `importitemsbutton`) instead of the
-  moodleform default, fixing duplicate `id_submitbutton` DOM ids when both forms render on
-  manage.php
-
-## [0.2.0] - 2026-06-10 (ALPHA)
-
-### Fixed
-- Unknown-domain and empty-shortname errors now raise `moodle_exception`, so the localised
-  message reaches the admin UI and web-service clients (previously the text was buried in
-  `invalid_parameter_exception` debuginfo and admins saw a generic error)
-- Removed case-duplicate `Manager.php` / `Resolver.php` index entries left by a rename on a
-  case-insensitive filesystem
-- Removed orphan `importerror` string (pt_br only, unused); English strings re-sorted
-  alphabetically
-
-### Added
-- `manager::upsert_items_chunked()`: bounded per-chunk transactions for large imports; the
-  admin CSV import now uses it (web services keep the hard `MAX_BATCH_SIZE` limit)
-- `import_csv_form` validates the domain-shortname pattern like `create_domain_form`
-
-### Changed
-- `manage.php` escapes error notifications with `s()` (core notifications render raw HTML)
-- Note: version.php was not bumped for the docs-only 0.1.1 entry; from 0.2.0 onward
-  version.php and CHANGELOG move together
-
-## [0.1.1] - 2026-04-02 (ALPHA)
-
-### Changed
-- Documentation aligned with Moodle 4.5+ database baseline (PostgreSQL 13+ / MySQL 8.0+)
-- Clarified cross-database compatibility and integration notes with profilefield_repeatable
-
-## [0.1.0] - 2026-04-01 (ALPHA)
-
-### Added
-- Initial alpha release of local_profilefield_repeatable plugin
-- Static resolver API for code-to-label lookups with caching
-- Domain and reference item CRUD operations via Manager class
-- CSV import/parse for bulk reference data updates
-- Web service API: `local_profilefield_repeatable_get_reference_labels`, `local_profilefield_repeatable_upsert_reference_items`
-- Admin management interface at `/local/profilefield_repeatable/manage.php`
-- Database tables: `local_profilefield_repeatable_domain`, `local_profilefield_repeatable_item` with proper indexing
-- Privacy compliance: null provider (no personal data storage)
-- Comprehensive unit tests for Manager and Resolver classes
-- Support for Moodle 4.5+ (PostgreSQL and MySQL/MariaDB)
-
-### Notes
-- Alpha maturity: API subject to change before 1.0 release
-- Requires dependency: profilefield_repeatable plugin (for actual field integration)
-- Reference data storage only (no personal information)
-
----
-
-## Version History
-
-| Version | Release Date | Status | Notes |
-|---------|--------------|--------|-------|
-| 0.3.0   | 2026-06-11   | ALPHA  | Read capability, legacy fallback removal, Behat |
-| 0.2.0   | 2026-06-10   | ALPHA  | Real error messages, chunked imports, hardening |
-| 0.1.1   | 2026-04-02   | ALPHA  | Documentation updates (no version.php bump) |
-| 0.1.0   | 2026-04-01   | ALPHA  | Initial release |
-
+- Dead lang strings `wsgetlabelsdesc` and `wsupsertdesc`.

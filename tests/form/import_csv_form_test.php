@@ -19,7 +19,11 @@ namespace local_dictionaries\form;
 /**
  * Tests for import_csv_form validation.
  *
+ * Metadata stays in docblocks: the plugin supports Moodle 4.5, whose moodle-cs cannot read
+ * PHPUnit attributes.
+ *
  * @package    local_dictionaries
+ * @category   test
  * @covers     \local_dictionaries\form\import_csv_form
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
@@ -59,5 +63,28 @@ final class import_csv_form_test extends \advanced_testcase {
         ], []);
 
         $this->assertArrayNotHasKey('importdomainshortname', $errors);
+    }
+
+    /**
+     * An invalid parent domain shortname is rejected; an empty one is allowed.
+     */
+    public function test_validation_checks_parent_domain(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $form = new import_csv_form('/local/dictionaries/manage.php');
+        $errors = $form->validation([
+            'importdomainshortname' => 'cities',
+            'importparentdomain' => 'Bad Parent!',
+            'csvtext' => '01,Sao Paulo',
+        ], []);
+        $this->assertArrayHasKey('importparentdomain', $errors);
+
+        $errors = $form->validation([
+            'importdomainshortname' => 'cities',
+            'importparentdomain' => '',
+            'csvtext' => '01,Sao Paulo',
+        ], []);
+        $this->assertArrayNotHasKey('importparentdomain', $errors);
     }
 }

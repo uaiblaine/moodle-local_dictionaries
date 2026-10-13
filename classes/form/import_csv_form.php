@@ -17,6 +17,8 @@
 namespace local_dictionaries\form;
 
 use core_text;
+use local_dictionaries\local\manager;
+use local_dictionaries\resolver;
 use moodleform;
 
 defined('MOODLE_INTERNAL') || die();
@@ -33,6 +35,8 @@ require_once($CFG->libdir . '/formslib.php');
 class import_csv_form extends moodleform {
     /**
      * Form definition.
+     *
+     * @return void
      */
     protected function definition(): void {
         $mform = $this->_form;
@@ -48,7 +52,7 @@ class import_csv_form extends moodleform {
             'importdomainshortname',
             get_string('domainshortname', 'local_dictionaries'),
             [
-                'maxlength' => 100,
+                'maxlength' => manager::MAX_SHORTNAME_LENGTH,
                 'size' => 40,
                 'placeholder' => get_string('placeholderdomainshortname', 'local_dictionaries'),
             ]
@@ -61,6 +65,18 @@ class import_csv_form extends moodleform {
             null,
             'client'
         );
+
+        $mform->addElement(
+            'text',
+            'importparentdomain',
+            get_string('parentdomain', 'local_dictionaries'),
+            [
+                'maxlength' => manager::MAX_SHORTNAME_LENGTH,
+                'size' => 40,
+            ]
+        );
+        $mform->setType('importparentdomain', PARAM_RAW_TRIMMED);
+        $mform->addHelpButton('importparentdomain', 'parentdomain', 'local_dictionaries');
 
         $mform->addElement(
             'filepicker',
@@ -98,7 +114,7 @@ class import_csv_form extends moodleform {
     }
 
     /**
-     * Validate the domain shortname and that a file or pasted CSV was provided.
+     * Validate the domain shortnames and that a file or pasted CSV was provided.
      *
      * @param array $data
      * @param array $files
@@ -110,8 +126,13 @@ class import_csv_form extends moodleform {
         $shortname = core_text::strtolower(trim((string)($data['importdomainshortname'] ?? '')));
         if ($shortname === '') {
             $errors['importdomainshortname'] = get_string('domainrequired', 'local_dictionaries');
-        } else if (!preg_match('/^[a-z0-9_]+$/', $shortname)) {
+        } else if (!preg_match(resolver::DOMAIN_PATTERN, $shortname)) {
             $errors['importdomainshortname'] = get_string('domaininvalid', 'local_dictionaries');
+        }
+
+        $parent = core_text::strtolower(trim((string)($data['importparentdomain'] ?? '')));
+        if ($parent !== '' && !preg_match(resolver::DOMAIN_PATTERN, $parent)) {
+            $errors['importparentdomain'] = get_string('domaininvalid', 'local_dictionaries');
         }
 
         $hastext = trim((string)($data['csvtext'] ?? '')) !== '';

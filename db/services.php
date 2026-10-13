@@ -28,7 +28,7 @@ $functions = [
     'local_dictionaries_upsert_reference_items' => [
         'classname' => 'local_dictionaries\\external\\upsert_reference_items',
         'methodname' => 'execute',
-        'description' => 'Upsert reference code-label pairs for one domain.',
+        'description' => 'Insert or update the code-label items of one reference dictionary domain.',
         'type' => 'write',
         'capabilities' => 'local/dictionaries:manage',
         'ajax' => true,
@@ -36,18 +36,29 @@ $functions = [
     'local_dictionaries_get_reference_labels' => [
         'classname' => 'local_dictionaries\\external\\get_reference_labels',
         'methodname' => 'execute',
-        'description' => 'Resolve labels for reference codes in one domain.',
+        'description' => 'Resolve the labels of codes in one domain. Restricted domains need local/dictionaries:view.',
         'type' => 'read',
         'capabilities' => 'local/dictionaries:view',
         'ajax' => true,
+        'readonlysession' => true,
+    ],
+    'local_dictionaries_search_items' => [
+        'classname' => 'local_dictionaries\\external\\search_items',
+        'methodname' => 'execute',
+        'description' => 'Search the active items of one domain by label or code. Restricted domains need local/dictionaries:view.',
+        'type' => 'read',
+        'capabilities' => 'local/dictionaries:view',
+        'ajax' => true,
+        'readonlysession' => true,
     ],
 ];
 
 $services = [
-    'Profilefield Repeatable Reference API' => [
+    'Reference dictionaries API' => [
         'functions' => [
             'local_dictionaries_upsert_reference_items',
             'local_dictionaries_get_reference_labels',
+            'local_dictionaries_search_items',
         ],
         'restrictedusers' => 0,
         'enabled' => 1,

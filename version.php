@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Local profilefield repeatable reference dictionary version.
+ * Version information for local_dictionaries.
  *
  * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
@@ -25,8 +25,8 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_dictionaries';
-$plugin->version = 2026042000;
-$plugin->requires = 2024100100;
+$plugin->version = 2026042001;
+$plugin->requires = 2024100700;
 $plugin->maturity = MATURITY_ALPHA;
-$plugin->release = '0.4.1';
-$plugin->supported = [405, 502];
+$plugin->release = '0.5.0';
+$plugin->supported = [405, 503];

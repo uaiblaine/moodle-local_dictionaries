@@ -17,114 +17,154 @@
 namespace local_dictionaries\external;
 
 use core_external\external_api;
+use local_dictionaries\api;
 
 /**
- * Tests for get_reference_labels external function.
+ * Tests for the get_reference_labels web service.
+ *
+ * Metadata stays in docblocks: the plugin supports Moodle 4.5, whose moodle-cs cannot read
+ * PHPUnit attributes.
  *
  * @package    local_dictionaries
+ * @category   test
  * @covers     \local_dictionaries\external\get_reference_labels
+ * @covers     \local_dictionaries\local\access
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class get_reference_labels_test extends \advanced_testcase {
     /**
-     * Skip when plugin tables are not present.
+     * Create a restricted and an open domain, each with item '01'.
+     *
+     * @return void
      */
-    private function require_tables(): void {
-        global $DB;
-        $dbman = $DB->get_manager();
-        if (
-            !$dbman->table_exists(new \xmldb_table('local_dictionaries_domain')) ||
-            !$dbman->table_exists(new \xmldb_table('local_dictionaries_item'))
-        ) {
-            $this->markTestSkipped('local_dictionaries tables are not available.');
-        }
+    private function create_domains(): void {
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+        $generator->create_domain(['shortname' => 'restricted', 'visibility' => api::VISIBILITY_RESTRICTED]);
+        $generator->create_item(['domain' => 'restricted', 'code' => '01', 'label' => 'Secret']);
+        $generator->create_domain(['shortname' => 'open', 'visibility' => api::VISIBILITY_LOGGEDIN]);
+        $generator->create_item(['domain' => 'open', 'code' => '01', 'label' => 'Public']);
     }
 
     /**
-     * Returns labels for known codes only.
+     * Call the function the way an AJAX request does.
+     *
+     * @param array $args
+     * @return array The call_external_function() response.
+     */
+    private function call(array $args): array {
+        $_POST['sesskey'] = sesskey();
+        return external_api::call_external_function('local_dictionaries_get_reference_labels', $args, true);
+    }
+
+    /**
+     * Returns labels for known codes only, keyed by the caller's spelling.
      */
     public function test_execute_returns_resolved_labels(): void {
         $this->resetAfterTest();
-        $this->require_tables();
+        $this->create_domains();
         $this->setAdminUser();
 
-        $manager = new \local_dictionaries\local\manager();
-        $manager->upsert_domain('diretoria', 'Diretoria');
-        $manager->upsert_items('diretoria', [
-            ['code' => '01', 'label' => 'Sao Paulo'],
-        ]);
-
-        $result = get_reference_labels::execute('diretoria', ['01', '99']);
+        $result = get_reference_labels::execute('restricted', ['01', '99']);
         $result = external_api::clean_returnvalue(get_reference_labels::execute_returns(), $result);
-
-        $this->assertCount(1, $result['items']);
-        $this->assertSame('01', $result['items'][0]['code']);
-        $this->assertSame('Sao Paulo', $result['items'][0]['label']);
+        $this->assertSame([['code' => '01', 'label' => 'Secret']], $result['items']);
     }
 
     /**
-     * Throws when batch size exceeds the configured maximum.
+     * A user without the view capability reads an open domain but not a restricted or unknown one.
      */
-    public function test_execute_rejects_oversized_batch(): void {
+    public function test_visibility_decides_on_the_recorded_domain(): void {
         $this->resetAfterTest();
-        $this->require_tables();
-        $this->setAdminUser();
+        $this->create_domains();
+        $this->setUser($this->getDataGenerator()->create_user());
 
-        $manager = new \local_dictionaries\local\manager();
-        $manager->upsert_domain('diretoria', 'Diretoria');
+        $response = $this->call(['domain' => 'open', 'codes' => ['01']]);
+        $this->assertFalse($response['error']);
+        $this->assertSame([['code' => '01', 'label' => 'Public']], $response['data']['items']);
 
-        $codes = array_fill(0, \local_dictionaries\local\manager::MAX_BATCH_SIZE + 1, 'x');
+        $response = $this->call(['domain' => 'restricted', 'codes' => ['01']]);
+        $this->assertTrue($response['error']);
+        $this->assertSame('nopermissions', $response['exception']->errorcode);
 
-        $this->expectException(\invalid_parameter_exception::class);
-        get_reference_labels::execute('diretoria', $codes);
+        $response = $this->call(['domain' => 'nowhere', 'codes' => ['01']]);
+        $this->assertTrue($response['error']);
+        $this->assertSame('nopermissions', $response['exception']->errorcode);
     }
 
     /**
-     * Requires the manage capability.
+     * Labels leave the service with markup stripped and no HTML escaping; the stored value stays raw.
      */
-    public function test_execute_requires_capability(): void {
+    public function test_labels_are_formatted_not_raw(): void {
+        global $DB;
+
         $this->resetAfterTest();
-        $this->require_tables();
+        $this->create_domains();
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+        $generator->create_item(['domain' => 'open', 'code' => 'ml', 'label' => '<b>Bold</b> & <script>x</script>y']);
+        $this->setUser($this->getDataGenerator()->create_user());
 
-        $user = $this->getDataGenerator()->create_user();
-        $this->setUser($user);
-
-        $this->expectException(\required_capability_exception::class);
-        get_reference_labels::execute('diretoria', ['01']);
+        $response = $this->call(['domain' => 'open', 'codes' => ['ml']]);
+        $this->assertFalse($response['error']);
+        $label = $response['data']['items'][0]['label'];
+        $this->assertStringNotContainsString('<', $label);
+        $this->assertStringContainsString('&', $label);
+        $this->assertStringNotContainsString('&amp;', $label);
+        $this->assertStringContainsString('<b>', $DB->get_field('local_dictionaries_item', 'label', ['codekey' => 'ml']));
     }
 
     /**
-     * The read-only viewreference capability grants label resolution but not upserts.
+     * The view capability opens restricted domains, but does not allow writes.
      */
-    public function test_execute_allows_viewreference_only_role(): void {
+    public function test_view_capability_reads_restricted_domains(): void {
         $this->resetAfterTest();
-        $this->require_tables();
-        $this->setAdminUser();
-
-        $manager = new \local_dictionaries\local\manager();
-        $manager->upsert_domain('diretoria', 'Diretoria');
-        $manager->upsert_items('diretoria', [
-            ['code' => '01', 'label' => 'Sao Paulo'],
-        ]);
+        $this->create_domains();
 
         $systemcontext = \context_system::instance();
-        $roleid = $this->getDataGenerator()->create_role(['shortname' => 'refreader']);
-        assign_capability(
-            'local/dictionaries:view',
-            CAP_ALLOW,
-            $roleid,
-            $systemcontext->id
-        );
+        $roleid = $this->getDataGenerator()->create_role(['shortname' => 'dictreader']);
+        assign_capability('local/dictionaries:view', CAP_ALLOW, $roleid, $systemcontext->id);
         $user = $this->getDataGenerator()->create_user();
         role_assign($roleid, $user->id, $systemcontext->id);
         $this->setUser($user);
 
-        $result = get_reference_labels::execute('diretoria', ['01']);
-        $result = external_api::clean_returnvalue(get_reference_labels::execute_returns(), $result);
-        $this->assertSame('Sao Paulo', $result['items'][0]['label']);
+        $response = $this->call(['domain' => 'restricted', 'codes' => ['01']]);
+        $this->assertFalse($response['error']);
+        $this->assertSame('Secret', $response['data']['items'][0]['label']);
 
         $this->expectException(\required_capability_exception::class);
-        upsert_reference_items::execute('diretoria', [['code' => '02', 'label' => 'Rio']]);
+        upsert_reference_items::execute('restricted', [['code' => '02', 'label' => 'Rio']]);
+    }
+
+    /**
+     * The guest user is refused even on an open domain; an anonymous caller is refused before that.
+     */
+    public function test_guest_and_anonymous_are_refused(): void {
+        $this->resetAfterTest();
+        $this->create_domains();
+
+        $this->setGuestUser();
+        $response = $this->call(['domain' => 'open', 'codes' => ['01']]);
+        $this->assertTrue($response['error']);
+        $this->assertSame('noguest', $response['exception']->errorcode);
+
+        $this->setUser(null);
+        $response = $this->call(['domain' => 'open', 'codes' => ['01']]);
+        $this->assertTrue($response['error']);
+        $this->assertSame('servicerequireslogin', $response['exception']->errorcode);
+    }
+
+    /**
+     * Throws when the batch size exceeds the maximum.
+     */
+    public function test_execute_rejects_oversized_batch(): void {
+        $this->resetAfterTest();
+        $this->create_domains();
+        $this->setAdminUser();
+
+        $codes = array_fill(0, \local_dictionaries\local\manager::MAX_BATCH_SIZE + 1, 'x');
+
+        $this->expectException(\invalid_parameter_exception::class);
+        get_reference_labels::execute('restricted', $codes);
     }
 }

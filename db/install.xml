@@ -1,14 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/dictionaries/db" VERSION="2026030600" COMMENT="XMLDB file for local_dictionaries"
+<XMLDB PATH="local/dictionaries/db" VERSION="2026042001" COMMENT="XMLDB file for local_dictionaries"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
   <TABLES>
-    <TABLE NAME="local_dictionaries_domain" COMMENT="Reference domains for repeatable profile field lookups">
+    <TABLE NAME="local_dictionaries_domain" COMMENT="Reference dictionary domains (one code list each)">
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
-        <FIELD NAME="shortname" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="shortname" TYPE="char" LENGTH="100" NOTNULL="true" SEQUENCE="false" COMMENT="Lowercase identifier matching resolver::DOMAIN_PATTERN"/>
         <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="visibility" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="0 restricted to local/dictionaries:view, 1 any logged-in non-guest user"/>
+        <FIELD NAME="revision" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="Bumped on every item write; part of the label cache key"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
@@ -24,17 +27,24 @@
       <FIELDS>
         <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
         <FIELD NAME="domainid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
-        <FIELD NAME="code" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="code" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Code as last written, spelling preserved"/>
+        <FIELD NAME="codekey" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Lowercased code; the unique and lookup key"/>
         <FIELD NAME="label" TYPE="text" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="searchkey" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="Label lowercased with accents removed, cut at 255 characters"/>
+        <FIELD NAME="sortorder" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="active" TYPE="int" LENGTH="1" NOTNULL="true" DEFAULT="1" SEQUENCE="false" COMMENT="Inactive items still resolve but are not offered by search"/>
+        <FIELD NAME="parentid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Parent item, possibly in another domain"/>
         <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
         <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="domainid_fk" TYPE="foreign" FIELDS="domainid" REFTABLE="local_dictionaries_domain" REFFIELDS="id"/>
+        <KEY NAME="parentid_fk" TYPE="foreign" FIELDS="parentid" REFTABLE="local_dictionaries_item" REFFIELDS="id"/>
       </KEYS>
       <INDEXES>
-        <INDEX NAME="domainid_code_uix" UNIQUE="true" FIELDS="domainid, code"/>
+        <INDEX NAME="domainid_codekey_uix" UNIQUE="true" FIELDS="domainid, codekey"/>
+        <INDEX NAME="domainid_searchkey_ix" UNIQUE="false" FIELDS="domainid, searchkey"/>
       </INDEXES>
     </TABLE>
   </TABLES>

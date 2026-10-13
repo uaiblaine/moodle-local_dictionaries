@@ -15,41 +15,68 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Strings for component local_dictionaries.
+ * Strings for component local_dictionaries, language 'en'.
  *
  * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-$string['cachedef_labels'] = 'Cached resolved labels for reference codes';
+$string['actions'] = 'Actions';
+$string['cachedef_domains'] = 'Reference dictionary domains read during one request';
+$string['cachedef_labels'] = 'Resolved labels of reference dictionary codes';
 $string['createdomain'] = 'Create or update domain';
 $string['csvfile'] = 'CSV file';
-$string['csvhelp'] = 'Format: code,label. Header line is optional.';
+$string['csvhelp'] = 'Columns: code, label. A first row naming the columns code and label is a header, and may add the columns parentcode, sortorder and active (0 or 1) in any order. The delimiter (comma, semicolon or tab) is detected from the first line. Codes are case-insensitive; a code repeated in the file keeps its last row.';
+$string['csvrejectcodetoolong'] = 'Line {$a}: the code is longer than 255 characters.';
+$string['csvrejectedhidden'] = '{$a} more rejected rows are not listed.';
+$string['csvrejectemptycode'] = 'Line {$a}: the code is empty.';
+$string['csvrejectinvalidactive'] = 'Line {$a}: active must be 0 or 1.';
+$string['csvrejectinvalidsortorder'] = 'Line {$a}: sortorder must be a whole number.';
+$string['csvrejectinvalidutf8'] = 'Line {$a}: the row is not valid UTF-8 text.';
+$string['csvrejecttoofewcolumns'] = 'Line {$a}: the row has fewer columns than code and label need.';
 $string['csvrequired'] = 'Upload a CSV file or paste CSV content.';
 $string['csvtext'] = 'CSV content (optional)';
-$string['dictionaries:manage'] = 'Manage reference dictionaries for profilefield repeatable';
-$string['dictionaries:view'] = 'View and resolve reference dictionaries for profilefield repeatable';
+$string['dictionaries:manage'] = 'Manage reference dictionaries';
+$string['dictionaries:view'] = 'Read restricted reference dictionaries through the web services';
+$string['domaindescription'] = 'Description';
 $string['domaininvalid'] = 'Invalid domain shortname. Use lowercase letters, numbers, and underscore only.';
 $string['domainname'] = 'Domain name';
 $string['domainrequired'] = 'Domain shortname is required.';
 $string['domainsaved'] = 'Domain saved: {$a}';
 $string['domainshortname'] = 'Domain shortname';
+$string['domaintoolong'] = 'Domain shortname is longer than {$a} characters.';
+$string['domainvisibility'] = 'Who can look up items';
+$string['domainvisibility_help'] = 'Who may resolve and search the items of this domain through the web services (autocomplete fields, for example). Restricted domains need the capability local/dictionaries:view. Plugins that call the PHP API directly decide for themselves.';
+$string['domainvisibilityinvalid'] = 'Choose who can look up items.';
+$string['editdomain'] = 'Edit {$a}';
+$string['errorcodecollision'] = 'The database already holds a code equal to "{$a}" under its collation rules (for example "ß" and "ss"). Rename one of them.';
+$string['errorcodetoolong'] = 'The code of item {$a} is longer than 255 characters.';
+$string['errornotables'] = 'The reference dictionary tables are not available yet. Run the plugin upgrade.';
+$string['errorparentcycle'] = 'Item {$a} is part of a parent cycle.';
+$string['errorparentself'] = 'Item {$a} cannot be its own parent.';
 $string['errorunknowndomain'] = 'Unknown domain: {$a}';
+$string['errorunknownparent'] = 'Unknown parent codes: {$a}';
+$string['eventdomaincreated'] = 'Reference dictionary domain created';
+$string['eventdomainupdated'] = 'Reference dictionary domain updated';
+$string['eventitemsimported'] = 'Reference dictionary items imported';
 $string['existingdomains'] = 'Existing domains';
 $string['importcsv'] = 'Import CSV';
 $string['importitems'] = 'Import items';
-$string['importsummary'] = 'Import completed. Inserted: {$a->inserted}, Updated: {$a->updated}, Ignored: {$a->ignored}.';
-$string['managereference'] = 'Manage repeatable reference dictionaries';
+$string['importsummary'] = 'Import completed. Inserted: {$a->inserted}, Updated: {$a->updated}, Ignored: {$a->ignored}, Duplicates: {$a->duplicates}, Rejected: {$a->rejected}.';
+$string['itemcount'] = 'Items';
+$string['managedictionaries'] = 'Manage reference dictionaries';
 $string['maxbatchsizeexceeded'] = 'Maximum batch size exceeded ({$a}).';
 $string['name'] = 'Name';
-$string['placeholderdomainname'] = 'Diretoria';
+$string['nodomains'] = 'No domains yet.';
+$string['parentdomain'] = 'Parent domain (optional)';
+$string['parentdomain_help'] = 'Shortname of the domain that holds the items named in the parentcode column, for example the states of a municipality list. Empty means the parents are items of the imported domain itself.';
+$string['placeholderdomainname'] = 'Regional boards';
 $string['placeholderdomainshortname'] = 'diretoria';
 $string['pluginname'] = 'Reference dictionaries';
-$string['privacy:metadata'] = 'The local_dictionaries plugin stores reference dictionaries for code-to-label resolution.';
-$string['referencenotables'] = 'Reference tables are not available yet. Run plugin upgrade.';
+$string['privacy:metadata'] = 'The Reference dictionaries plugin stores code lists entered by administrators. It stores no personal data.';
 $string['savedomain'] = 'Save domain';
 $string['shortname'] = 'Shortname';
 $string['timemodified'] = 'Time modified';
-$string['wsgetlabelsdesc'] = 'Resolve labels for reference codes in one domain.';
-$string['wsupsertdesc'] = 'Upsert reference items for one domain.';
+$string['visibilityloggedin'] = 'Any logged-in user except guests';
+$string['visibilityrestricted'] = 'Only users with the view capability';

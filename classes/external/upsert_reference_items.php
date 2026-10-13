@@ -23,10 +23,11 @@ use core_external\external_multiple_structure;
 use core_external\external_single_structure;
 use core_external\external_value;
 use invalid_parameter_exception;
+use local_dictionaries\local\access;
 use local_dictionaries\local\manager;
 
 /**
- * External API for reference upsert.
+ * Insert or update the items of one domain.
  *
  * @package    local_dictionaries
  * @copyright  2026 Anderson Blaine
@@ -43,9 +44,30 @@ class upsert_reference_items extends external_api {
             'domain' => new external_value(PARAM_ALPHANUMEXT, 'Domain shortname'),
             'items' => new external_multiple_structure(
                 new external_single_structure([
-                    'code' => new external_value(PARAM_RAW_TRIMMED, 'Reference code value'),
-                    'label' => new external_value(PARAM_RAW_TRIMMED, 'Resolved label value'),
+                    'code' => new external_value(PARAM_RAW_TRIMMED, 'Code; matched case-insensitively'),
+                    'label' => new external_value(PARAM_RAW_TRIMMED, 'Label, stored raw'),
+                    'parentcode' => new external_value(
+                        PARAM_RAW_TRIMMED,
+                        'Code of the parent item in parentdomain; empty removes the parent; omitted keeps it',
+                        VALUE_OPTIONAL
+                    ),
+                    'sortorder' => new external_value(
+                        PARAM_INT,
+                        'Sort order; omitted keeps it (0 for new items)',
+                        VALUE_OPTIONAL
+                    ),
+                    'active' => new external_value(
+                        PARAM_BOOL,
+                        'Offered by search; omitted keeps it (true for new items)',
+                        VALUE_OPTIONAL
+                    ),
                 ])
+            ),
+            'parentdomain' => new external_value(
+                PARAM_ALPHANUMEXT,
+                'Domain holding the parent items; empty means the same domain',
+                VALUE_DEFAULT,
+                ''
             ),
         ]);
     }
@@ -55,16 +77,23 @@ class upsert_reference_items extends external_api {
      *
      * @param string $domain
      * @param array $items
-     * @return array
+     * @param string $parentdomain
+     * @return array ['inserted' => int, 'updated' => int, 'ignored' => int]
+     * @throws invalid_parameter_exception When the parameters are invalid or the batch is too large.
+     * @throws \moodle_exception When the user is not logged in or is the guest user, or on an
+     *     unknown domain or parent, a self-parent or an over-long code.
+     * @throws \required_capability_exception When the user lacks local/dictionaries:manage.
      */
-    public static function execute(string $domain, array $items): array {
+    public static function execute(string $domain, array $items, string $parentdomain = ''): array {
         $params = self::validate_parameters(self::execute_parameters(), [
             'domain' => $domain,
             'items' => $items,
+            'parentdomain' => $parentdomain,
         ]);
 
         $context = context_system::instance();
         self::validate_context($context);
+        access::require_not_guest();
         require_capability('local/dictionaries:manage', $context);
 
         if (count($params['items']) > manager::MAX_BATCH_SIZE) {
@@ -73,8 +102,8 @@ class upsert_reference_items extends external_api {
             );
         }
 
-        $service = new manager();
-        return $service->upsert_items($params['domain'], $params['items']);
+        $parent = $params['parentdomain'] === '' ? null : $params['parentdomain'];
+        return (new manager())->upsert_items($params['domain'], $params['items'], $parent);
     }
 
     /**
@@ -86,7 +115,7 @@ class upsert_reference_items extends external_api {
         return new external_single_structure([
             'inserted' => new external_value(PARAM_INT, 'Inserted rows count'),
             'updated' => new external_value(PARAM_INT, 'Updated rows count'),
-            'ignored' => new external_value(PARAM_INT, 'Ignored rows count'),
+            'ignored' => new external_value(PARAM_INT, 'Unchanged, empty-code or superseded rows count'),
         ]);
     }
 }

@@ -25,12 +25,21 @@
 defined('MOODLE_INTERNAL') || die();
 
 $definitions = [
+    // Raw labels keyed by domain id, domain revision and a hash of the code key: a write bumps
+    // the revision, so entries of older revisions are never read again and age out by ttl.
     'labels' => [
         'mode' => cache_store::MODE_APPLICATION,
-        'simplekeys' => false,
+        'simplekeys' => true,
         'simpledata' => true,
         'staticacceleration' => true,
         'staticaccelerationsize' => 200,
         'ttl' => 3600,
+    ],
+    // Domain rows (id, visibility, revision) for the length of one request, so the revision
+    // read per resolve call costs one query per domain and request, never a stale value.
+    'domains' => [
+        'mode' => cache_store::MODE_REQUEST,
+        'simplekeys' => true,
+        'simpledata' => true,
     ],
 ];

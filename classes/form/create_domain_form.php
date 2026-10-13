@@ -17,6 +17,9 @@
 namespace local_dictionaries\form;
 
 use core_text;
+use local_dictionaries\api;
+use local_dictionaries\local\manager;
+use local_dictionaries\resolver;
 use moodleform;
 
 defined('MOODLE_INTERNAL') || die();
@@ -33,6 +36,8 @@ require_once($CFG->libdir . '/formslib.php');
 class create_domain_form extends moodleform {
     /**
      * Form definition.
+     *
+     * @return void
      */
     protected function definition(): void {
         $mform = $this->_form;
@@ -48,7 +53,7 @@ class create_domain_form extends moodleform {
             'domainshortname',
             get_string('domainshortname', 'local_dictionaries'),
             [
-                'maxlength' => 100,
+                'maxlength' => manager::MAX_SHORTNAME_LENGTH,
                 'size' => 40,
                 'placeholder' => get_string('placeholderdomainshortname', 'local_dictionaries'),
             ]
@@ -67,12 +72,33 @@ class create_domain_form extends moodleform {
             'domainname',
             get_string('domainname', 'local_dictionaries'),
             [
-                'maxlength' => 255,
+                'maxlength' => manager::MAX_NAME_LENGTH,
                 'size' => 60,
                 'placeholder' => get_string('placeholderdomainname', 'local_dictionaries'),
             ]
         );
         $mform->setType('domainname', PARAM_TEXT);
+
+        $mform->addElement(
+            'textarea',
+            'domaindescription',
+            get_string('domaindescription', 'local_dictionaries'),
+            ['rows' => 3, 'cols' => 60]
+        );
+        $mform->setType('domaindescription', PARAM_TEXT);
+
+        $mform->addElement(
+            'select',
+            'domainvisibility',
+            get_string('domainvisibility', 'local_dictionaries'),
+            [
+                api::VISIBILITY_RESTRICTED => get_string('visibilityrestricted', 'local_dictionaries'),
+                api::VISIBILITY_LOGGEDIN => get_string('visibilityloggedin', 'local_dictionaries'),
+            ]
+        );
+        $mform->setType('domainvisibility', PARAM_INT);
+        $mform->setDefault('domainvisibility', api::VISIBILITY_RESTRICTED);
+        $mform->addHelpButton('domainvisibility', 'domainvisibility', 'local_dictionaries');
 
         $mform->addElement('hidden', 'action', 'createdomain');
         $mform->setType('action', PARAM_ALPHA);
@@ -99,8 +125,15 @@ class create_domain_form extends moodleform {
         $shortname = core_text::strtolower(trim((string)($data['domainshortname'] ?? '')));
         if ($shortname === '') {
             $errors['domainshortname'] = get_string('domainrequired', 'local_dictionaries');
-        } else if (!preg_match('/^[a-z0-9_]+$/', $shortname)) {
+        } else if (core_text::strlen($shortname) > manager::MAX_SHORTNAME_LENGTH) {
+            $errors['domainshortname'] = get_string('domaintoolong', 'local_dictionaries', manager::MAX_SHORTNAME_LENGTH);
+        } else if (!preg_match(resolver::DOMAIN_PATTERN, $shortname)) {
             $errors['domainshortname'] = get_string('domaininvalid', 'local_dictionaries');
+        }
+
+        $visibility = (int)($data['domainvisibility'] ?? api::VISIBILITY_RESTRICTED);
+        if (!in_array($visibility, [api::VISIBILITY_RESTRICTED, api::VISIBILITY_LOGGEDIN], true)) {
+            $errors['domainvisibility'] = get_string('domainvisibilityinvalid', 'local_dictionaries');
         }
 
         return $errors;
