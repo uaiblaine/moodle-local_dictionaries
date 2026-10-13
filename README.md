@@ -74,6 +74,8 @@ offers them.
     ?string $parentdomain = null
 ): array;
 // ['items' => [['code' => ..., 'label' => ...], ...], 'hasmore' => bool]
+\local_dictionaries\api::list_domains(): array;
+// [['shortname', 'name', 'description', 'visibility', 'itemcount', 'parentdomain'], ...] by name.
 \local_dictionaries\api::can_read(string $domain, ?int $userid = null): bool;
 \local_dictionaries\api::require_read(string $domain): void;
 ```
@@ -90,6 +92,13 @@ viewer may read) needs no gate. Browsing or searching a domain does: call `requi
 before `api::search()`, and again for `$parentdomain` when you pass a parent code. The schema
 records a parent by item id only, so `$parentdomain` names the domain holding the parents; null
 means the searched domain itself.
+
+`api::list_domains()` feeds a select in a definition form or an admin page. It runs no capability
+check, like `resolver`: it exposes the name, description and visibility of every domain, restricted
+ones included, so show it only to users who configure fields. `name` and `description` are raw
+(apply `format_string()`); `itemcount` counts active items; `parentdomain` is the shortname of the
+domain holding the parents of the domain's items when they all sit in one domain (itself
+included), and null when no item has a parent or the parents are in more than one domain.
 
 Search order: an item whose code equals the query, then labels starting with the query, then
 labels containing it; case and accents are ignored; inside each group by sort order, then
