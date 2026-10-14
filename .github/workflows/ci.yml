@@ -33,7 +33,9 @@ jobs:
   # profilefield_repeatable is the first consumer of the resolver API. It is installed beside
   # this plugin, from its branch for the same Moodle version, so a contract break shows up
   # here; neither plugin lists the other in $plugin->dependencies (the consumer probes the
-  # resolver with class_exists()).
+  # resolver with class_exists()). The consumer requires local_repeatable, the repeatable-sets
+  # engine it adapts (its version.php dependencies), so the engine comes too, from its branch for
+  # the same Moodle version.
   ci-501:
     name: Moodle 5.01
     uses: moodle-an-hochschulen/moodle-workflows/.github/workflows/moodle-plugin-ci.yml@main
@@ -41,3 +43,4 @@ jobs:
       moodle-core-branch: MOODLE_501_STABLE
       plugin-dependencies: |
         uaiblaine/moodle-profilefield_repeatable,MOODLE_501_STABLE
+        uaiblaine/moodle-local_repeatable,MOODLE_501_STABLE
