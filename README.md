@@ -14,7 +14,8 @@ labels when they display them, and for matching items when someone types in an a
 field. The first consumer is the user profile field `profilefield_repeatable`; the plugin
 itself knows nothing about profile fields.
 
-The plugin owns two tables and stores no personal data.
+The plugin owns two tables, `local_dictionaries_domain` and `local_dictionaries_item`, and stores
+no personal data (see [Data stored](#data-stored)).
 
 
 Requirements
@@ -144,11 +145,38 @@ Capabilities
   web services.
 
 
-Privacy
--------
+Settings
+--------
 
-The plugin stores code lists entered by administrators and no personal data. Its privacy
-provider is a null provider.
+The plugin has no stored settings. Its `settings.php` adds one page under Site administration >
+Plugins > Local plugins, *Manage reference dictionaries* (`/local/dictionaries/manage.php`),
+open to users with `local/dictionaries:manage`.
+
+
+Data stored
+-----------
+
+The plugin keeps code lists in two tables, entered by administrators on the management page or
+through `local_dictionaries_upsert_reference_items`:
+
+- `local_dictionaries_domain`, one row per domain: the shortname, name, description, who may look
+  up its items (visibility), a revision counter bumped on every item write, and the times it was
+  created and last modified.
+- `local_dictionaries_item`, one row per item: its domain, the code as last written and the code
+  folded for case and accents (the lookup key), the label and its search key, the sort order, the
+  active flag, the optional parent item, and the times it was created and last modified.
+
+Rows are kept until an administrator changes them: the plugin offers no deletion of a domain or
+an item (an item no longer wanted is imported with `active` 0), and uninstalling the plugin drops
+both tables. Two caches hold copies: the resolved labels (application cache, one hour, superseded
+by the domain's revision on every write) and the domain rows for the length of one request.
+
+No row names a user, so the plugin stores no personal data and its privacy provider is a null
+provider: a data request exports nothing from it and a deletion request removes nothing. A CSV
+upload is read from the uploader's draft area and never stored by the plugin. Creating or
+updating a domain and importing items log an event with the acting user's id
+(`\local_dictionaries\event\domain_created`, `domain_updated`, `items_imported`); those log
+rows belong to the site's log stores, which export and delete them under their own providers.
 
 
 Troubleshooting
@@ -161,6 +189,15 @@ Troubleshooting
   one of them.
 - **Labels look stale right after a change made directly in the database**: the label cache
   is invalidated by the plugin's own writes only. Purge the caches.
+
+
+Translations
+------------
+
+The English strings ship in the package. The Brazilian Portuguese translation
+is maintained in this repository (`lang/pt_br`) and reaches sites through
+[AMOS](https://lang.moodle.org/), as the plugins directory requires; it is left
+out of the release package.
 
 
 License
