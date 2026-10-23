@@ -17,5 +17,6 @@
 /.phpcsignore         export-ignore
 /CLAUDE.md            export-ignore
 /docs                 export-ignore
+/lang/pt_br           export-ignore
+/mutations            export-ignore
 /phpcs.xml            export-ignore
-/mutations export-ignore
