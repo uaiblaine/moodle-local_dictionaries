@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v4.5-r2] - 2026-10-23
+
+Moodle 4.5 branch (`MOODLE_405_STABLE`): version `2024100701`, release `v4.5-r2`. The plugin
+brought to the Moodle plugins directory's submission guidelines.
+
+### Added
+- `LICENSE`, a copy of `COPYING.txt` (the GPL v3 text), shipped in the package: the plugins
+  directory requires a licence file there.
+- `tests/marketplace_readiness_test.php`, the fleet's file-reading test of the directory rules
+  (licence files, English-only package, data-only lang files, a README naming every table and
+  capability, setting names, scoped CSS, boilerplate, stamped core rows), and its mutation spec
+  `mutations/marketplace.conf`.
+- README sections "Settings", "Data stored" (both tables, what they keep, how long, what the
+  privacy provider exports and deletes) and "Translations".
+
+### Changed
+- `lang/pt_br` leaves the release package (`export-ignore`): the plugins directory accepts only
+  English strings, and the Brazilian Portuguese translation reaches sites through AMOS. It is
+  still maintained in the repository.
+
+### Fixed
+- The English placeholder of the domain shortname field read `diretoria`, a Portuguese word; it
+  now reads `regional_boards`, matching the name placeholder "Regional boards". The manage
+  template's example context follows.
+
 ## [v4.5-r1] - 2026-10-13
 
 Moodle 4.5 LTS branch (`MOODLE_405_STABLE`): version `2024100700`, release `v4.5-r1`,
