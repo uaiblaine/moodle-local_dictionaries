@@ -37,6 +37,7 @@ $string['csvrejectinvalidutf8'] = 'Linha {$a}: a linha não é texto UTF-8 váli
 $string['csvrejecttoofewcolumns'] = 'Linha {$a}: a linha tem menos colunas do que código e rótulo exigem.';
 $string['csvrequired'] = 'Envie um arquivo CSV ou cole o conteúdo CSV.';
 $string['csvtext'] = 'Conteúdo CSV (opcional)';
+$string['csvtoolarge'] = 'O CSV é maior que {$a}. Divida-o em várias importações.';
 $string['dictionaries:manage'] = 'Gerenciar dicionários de referência';
 $string['dictionaries:view'] = 'Ler dicionários de referência restritos pelos serviços web';
 $string['domaindescription'] = 'Descrição';
