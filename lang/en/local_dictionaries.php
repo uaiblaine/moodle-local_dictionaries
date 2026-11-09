@@ -37,6 +37,7 @@ $string['csvrejectinvalidutf8'] = 'Line {$a}: the row is not valid UTF-8 text.';
 $string['csvrejecttoofewcolumns'] = 'Line {$a}: the row has fewer columns than code and label need.';
 $string['csvrequired'] = 'Upload a CSV file or paste CSV content.';
 $string['csvtext'] = 'CSV content (optional)';
+$string['csvtoolarge'] = 'The CSV is larger than {$a}. Split it into several imports.';
 $string['dictionaries:manage'] = 'Manage reference dictionaries';
 $string['dictionaries:view'] = 'Read restricted reference dictionaries through the web services';
 $string['domaindescription'] = 'Description';

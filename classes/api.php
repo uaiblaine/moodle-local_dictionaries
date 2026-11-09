@@ -17,6 +17,7 @@
 namespace local_dictionaries;
 
 use context_system;
+use core_text;
 use local_dictionaries\local\domains;
 use local_dictionaries\local\keys;
 
@@ -43,6 +44,15 @@ class api {
 
     /** @var int Largest number of search results one call may ask for. */
     public const MAX_SEARCH_LIMIT = 100;
+
+    /**
+     * @var int Longest query or parent code, in characters, that {@see self::search()} derives keys from.
+     *
+     * Four key widths: no code or search key is longer than keys::MAX_KEY_LENGTH, so a longer
+     * text is not typed by anyone, and the transliteration behind keys::search_key() grows faster
+     * than the text.
+     */
+    public const MAX_QUERY_LENGTH = keys::MAX_KEY_LENGTH * 4;
 
     /**
      * Whether a user may browse and search one domain.
@@ -299,6 +309,8 @@ class api {
      * @param string|null $parentdomain Domain holding the parent items. The schema records a
      *     parent by item id only, so the caller names the domain; null means the searched
      *     domain itself. An unknown parent domain gives an empty result. Ignored without $parentcode.
+     *     A query or parent code longer than MAX_QUERY_LENGTH gives an empty result, before any key
+     *     is derived from it.
      * @return array ['items' => list of ['code' => string, 'label' => string], 'hasmore' => bool]
      */
     public static function search(
@@ -311,6 +323,12 @@ class api {
         global $DB;
 
         $empty = ['items' => [], 'hasmore' => false];
+        if (
+            core_text::strlen($query) > self::MAX_QUERY_LENGTH
+            || ($parentcode !== null && core_text::strlen($parentcode) > self::MAX_QUERY_LENGTH)
+        ) {
+            return $empty;
+        }
         $domain = keys::domain($domain);
         if ($domain === '' || !domains::tables_available()) {
             return $empty;

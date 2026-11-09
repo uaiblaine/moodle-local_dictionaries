@@ -83,7 +83,7 @@ class import_csv_form extends moodleform {
             'csvfile',
             get_string('csvfile', 'local_dictionaries'),
             null,
-            ['accepted_types' => ['.csv', '.txt'], 'maxbytes' => 0]
+            ['accepted_types' => ['.csv', '.txt'], 'maxbytes' => manager::MAX_CSV_BYTES]
         );
 
         $mform->addElement(
@@ -110,7 +110,7 @@ class import_csv_form extends moodleform {
     }
 
     /**
-     * Validate the domain shortnames and that a file or pasted CSV was provided.
+     * Validate the domain shortnames, that a file or pasted CSV was provided, and that neither is larger than MAX_CSV_BYTES.
      *
      * @param array $data
      * @param array $files
@@ -131,9 +131,21 @@ class import_csv_form extends moodleform {
             $errors['importparentdomain'] = get_string('domaininvalid', 'local_dictionaries');
         }
 
+        $toolarge = get_string('csvtoolarge', 'local_dictionaries', display_size(manager::MAX_CSV_BYTES));
+        $files = $this->get_draft_files('csvfile');
         $hastext = trim((string)($data['csvtext'] ?? '')) !== '';
-        if (!$hastext && empty($this->get_draft_files('csvfile'))) {
+        if (!$hastext && empty($files)) {
             $errors['csvfile'] = get_string('csvrequired', 'local_dictionaries');
+        }
+        // The picker's maxbytes is sent by the browser with each upload, so the size is checked here too.
+        foreach ($files ?: [] as $file) {
+            if ($file->get_filesize() > manager::MAX_CSV_BYTES) {
+                $errors['csvfile'] = $toolarge;
+            }
+        }
+        // The pasted text is bounded only by post_max_size.
+        if (strlen((string)($data['csvtext'] ?? '')) > manager::MAX_CSV_BYTES) {
+            $errors['csvtext'] = $toolarge;
         }
 
         return $errors;
