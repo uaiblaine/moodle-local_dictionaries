@@ -48,6 +48,15 @@ class manager {
     /** @var int Number of rejected CSV rows the import report lists; the rest are only counted. */
     public const MAX_REJECTIONS_SHOWN = 20;
 
+    /**
+     * @var int Largest CSV, in bytes, the manage page imports, uploaded or pasted.
+     *
+     * The import holds the whole file in memory several times over (the text and the parsed
+     * rows) and commits chunk by chunk, so a request that runs out of memory or time leaves a
+     * partial import.
+     */
+    public const MAX_CSV_BYTES = 10485760;
+
     /** @var int Number of keys per IN () lookup, well under every driver's placeholder limit. */
     private const LOOKUP_CHUNK = 1000;
 

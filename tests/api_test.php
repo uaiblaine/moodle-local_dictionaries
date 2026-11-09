@@ -16,6 +16,8 @@
 
 namespace local_dictionaries;
 
+use core_text;
+
 /**
  * Tests for the search API.
  *
@@ -116,6 +118,38 @@ final class api_test extends \advanced_testcase {
         $this->assertSame([], $this->codes(api::search('cities', 'campinas', 20, 'PA', 'uf')));
         // Control: without the filter, Campinas is found.
         $this->assertSame(['3509502'], $this->codes(api::search('cities', 'campinas')));
+    }
+
+    /**
+     * A query longer than MAX_QUERY_LENGTH gives an empty result; one of exactly that length is searched.
+     *
+     * The search key collapses runs of spaces, so both queries fold to 'sao paulo' and would match.
+     */
+    public function test_overlong_query_is_not_searched(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+
+        $padding = api::MAX_QUERY_LENGTH - core_text::strlen('são paulo') + 1;
+        $atlimit = 'são' . str_repeat(' ', $padding) . 'paulo';
+        $this->assertSame(api::MAX_QUERY_LENGTH, core_text::strlen($atlimit));
+        $this->assertSame(['3550308'], $this->codes(api::search('cities', $atlimit)));
+
+        $this->assertSame([], $this->codes(api::search('cities', $atlimit . ' ')));
+    }
+
+    /**
+     * A parent code longer than MAX_QUERY_LENGTH gives an empty result; one of exactly that length filters.
+     *
+     * The code is trimmed before its key is derived, so both parent codes fold to 'pa' and would match.
+     */
+    public function test_overlong_parent_code_is_not_searched(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+
+        $atlimit = str_pad('PA', api::MAX_QUERY_LENGTH);
+        $this->assertSame(['1500800', '1501402'], $this->codes(api::search('cities', '', 20, $atlimit, 'uf')));
+
+        $this->assertSame([], $this->codes(api::search('cities', '', 20, $atlimit . ' ', 'uf')));
     }
 
     /**

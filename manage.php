@@ -62,6 +62,10 @@ if ($createdata = $createform->get_data()) {
 }
 
 if ($importdata = $importform->get_data()) {
+    // A CSV up to manager::MAX_CSV_BYTES is held in memory several times over and committed
+    // chunk by chunk: running out of either limit midway leaves a partial import.
+    core_php_time_limit::raise(HOURSECS);
+    raise_memory_limit(MEMORY_EXTRA);
     try {
         $csvcontent = $importform->get_csv_content($importdata);
         if (trim($csvcontent) === '') {
