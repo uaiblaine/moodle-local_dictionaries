@@ -66,6 +66,13 @@ final class keys {
      * both). The accents are removed by canonical decomposition and dropping the combining
      * marks, so characters without a decomposition (non-Latin scripts) are kept as they are.
      *
+     * The result is recomposed to NFC: decomposition also splits characters into parts that
+     * are not marks (a Hangul syllable into two or three jamo, a Tamil two-part vowel sign into
+     * two signs), which would otherwise make the key longer than the code. A few characters
+     * are excluded from recomposition (musical symbols such as U+1D15E), so the key can still
+     * be longer than the code: writers check both lengths. Stored keys are rewritten by
+     * {@see manager::rekey_items()} when this derivation changes.
+     *
      * @param string $code A code already cleaned by {@see self::clean_code()}.
      * @return string
      */
@@ -73,8 +80,23 @@ final class keys {
         $decomposed = \Normalizer::normalize($code, \Normalizer::FORM_D);
         if (is_string($decomposed)) {
             $code = preg_replace('/\p{Mn}+/u', '', $decomposed) ?? $decomposed;
+            $recomposed = \Normalizer::normalize($code, \Normalizer::FORM_C);
+            if (is_string($recomposed)) {
+                $code = $recomposed;
+            }
         }
         return core_text::strtolower($code);
+    }
+
+    /**
+     * Whether a code and its key both fit their columns.
+     *
+     * @param string $code A code already cleaned by {@see self::clean_code()}.
+     * @param string $codekey The key {@see self::code_key()} derived from it.
+     * @return bool
+     */
+    public static function code_fits(string $code, string $codekey): bool {
+        return core_text::strlen($code) <= self::MAX_KEY_LENGTH && core_text::strlen($codekey) <= self::MAX_KEY_LENGTH;
     }
 
     /**

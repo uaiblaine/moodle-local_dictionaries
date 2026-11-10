@@ -97,8 +97,11 @@ tests/generator/lib.php     create_domain, create_item (through the manager)
   break); `manager` throws `moodle_exception`. Keep new read paths silent and
   new write paths loud.
 - **Every key comes from `local\keys`.** `codekey` = the code with accents
-  removed (NFD, combining marks dropped) and lowercased; it carries the unique
-  index; `searchkey` = label transliterated (`core_text::specialtoascii`),
+  removed (NFD, combining marks dropped, recomposed to NFC) and lowercased; it
+  carries the unique index and can still be longer than the code (U+1D15E never
+  recomposes), so writers check both with `keys::code_fits()`. A change to the
+  derivation needs an upgrade step calling `manager::rekey_items()`.
+  `searchkey` = label transliterated (`core_text::specialtoascii`),
   lowercased, cut at 255. A path that derives them differently breaks the unique
   index or the search. Lookups still filter the returned rows by exact key in
   PHP, and an insert collision surfaces as `errorcodecollision`, but only for
