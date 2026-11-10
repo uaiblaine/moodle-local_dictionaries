@@ -130,6 +130,30 @@ final class search_items_test extends \advanced_testcase {
     }
 
     /**
+     * A query longer than api::MAX_QUERY_LENGTH comes back empty, not as an error; one at the limit is searched.
+     *
+     * The spaces sit inside the query, where the parameter's trim leaves them and the search key
+     * collapses them, so both queries fold to 'brazilian portuguese'.
+     */
+    public function test_overlong_query_comes_back_empty(): void {
+        $this->resetAfterTest();
+        $this->create_domains();
+        /** @var \local_dictionaries_generator $generator */
+        $generator = $this->getDataGenerator()->get_plugin_generator('local_dictionaries');
+        $generator->create_item(['domain' => 'open', 'code' => 'ptbr', 'label' => 'Brazilian Portuguese']);
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        $padding = api::MAX_QUERY_LENGTH - strlen('brazilianportuguese');
+        $response = $this->call(['domain' => 'open', 'query' => 'brazilian' . str_repeat(' ', $padding) . 'portuguese']);
+        $this->assertFalse($response['error']);
+        $this->assertSame(['ptbr'], array_column($response['data']['items'], 'code'));
+
+        $response = $this->call(['domain' => 'open', 'query' => 'brazilian' . str_repeat(' ', $padding + 1) . 'portuguese']);
+        $this->assertFalse($response['error']);
+        $this->assertSame([], $response['data']['items']);
+    }
+
+    /**
      * An open domain whose items have parents in a restricted domain: the parent domain is
      * gated too, so the filter cannot probe the restricted codes.
      */
