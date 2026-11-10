@@ -53,6 +53,10 @@ $functions = [
     ],
 ];
 
+// The pages call the functions through AJAX, which needs 'ajax' => true and no service. The
+// service is for token integrations: it starts disabled and limited to the accounts an
+// administrator authorises. On upgrade core keeps the site's 'enabled' value but rewrites
+// 'restrictedusers' from here.
 $services = [
     'Reference dictionaries API' => [
         'functions' => [
@@ -60,8 +64,8 @@ $services = [
             'local_dictionaries_get_reference_labels',
             'local_dictionaries_search_items',
         ],
-        'restrictedusers' => 0,
-        'enabled' => 1,
+        'restrictedusers' => 1,
+        'enabled' => 0,
         'shortname' => 'local_dictionaries_api',
     ],
 ];
