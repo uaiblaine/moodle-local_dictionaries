@@ -32,6 +32,10 @@ closed, and code keys that no longer outgrow their column.
   enabled state it had, because core never rewrites it.
 
 ### Changed
+- `api::lookup()`, `resolver::resolve_bulk()` and `resolver::resolve()` (and so the
+  `local_dictionaries_get_reference_labels` web service) leave out a code longer than
+  `keys::MAX_INPUT_LENGTH` (1020 characters) and derive no key from it, the bound the search
+  already had. All three now derive caller keys through `keys::lookup_key()`.
 - The predefined service is installed disabled (`enabled` 0) and restricted to authorised users
   (`restrictedusers` 1). The plugin's pages call the functions through AJAX, which does not use
   the service.
