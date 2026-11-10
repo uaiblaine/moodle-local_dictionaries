@@ -35,6 +35,15 @@ final class keys {
     public const MAX_KEY_LENGTH = 255;
 
     /**
+     * @var int Longest code or query, in characters, a read path derives a key from.
+     *
+     * Four key widths: a stored code and its key are at most MAX_KEY_LENGTH characters, and the
+     * control characters and accents dropped before the key cannot make a caller's spelling
+     * that much longer than a code anyone stores.
+     */
+    public const MAX_INPUT_LENGTH = self::MAX_KEY_LENGTH * 4;
+
+    /**
      * Normalise a domain shortname, or return '' when it is empty or does not match the pattern.
      *
      * @param string $shortname
@@ -86,6 +95,23 @@ final class keys {
             }
         }
         return core_text::strtolower($code);
+    }
+
+    /**
+     * Derive the lookup key of a code a caller asks for, or '' when it is not to be looked up.
+     *
+     * Read paths call this rather than code_key(clean_code()): a code longer than
+     * MAX_INPUT_LENGTH gets no key, so one request cannot make the key derivation and the
+     * query's parameters carry a text of any length. '' also covers a code that cleans to nothing.
+     *
+     * @param string $code A code as the caller wrote it.
+     * @return string
+     */
+    public static function lookup_key(string $code): string {
+        if (core_text::strlen($code) > self::MAX_INPUT_LENGTH) {
+            return '';
+        }
+        return self::code_key(self::clean_code($code));
     }
 
     /**
