@@ -116,6 +116,19 @@ final class csv_parser_test extends \advanced_testcase {
     }
 
     /**
+     * The length check reads the code's key too: a long Hangul code passes, a code whose key outgrows it does not.
+     */
+    public function test_code_whose_key_is_too_long_is_rejected(): void {
+        $content = str_repeat('한', 255) . ",Hangul\n"
+            . str_repeat("\u{1D15E}", 127) . ",Fits\n"
+            . str_repeat("\u{1D15E}", 128) . ",Key too long\n";
+        $result = $this->parse($content);
+
+        $this->assertSame([str_repeat('한', 255), str_repeat("\u{1D15E}", 127)], array_column($result['items'], 'code'));
+        $this->assertSame([['line' => 3, 'reason' => manager::REJECT_CODE_TOO_LONG]], $result['rejected']);
+    }
+
+    /**
      * A code repeated in the file keeps its last row and is counted, whatever its case.
      */
     public function test_duplicates_last_wins_and_are_counted(): void {
