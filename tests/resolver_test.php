@@ -16,6 +16,8 @@
 
 namespace local_dictionaries;
 
+use local_dictionaries\local\keys;
+
 /**
  * Tests for the resolver class.
  *
@@ -75,6 +77,24 @@ final class resolver_test extends \advanced_testcase {
             ['PT' => 'Portuguese', 'pt' => 'Portuguese', 'Pt' => 'Portuguese'],
             resolver::resolve_bulk('iso639', ['PT', 'pt', ' Pt '])
         );
+    }
+
+    /**
+     * A code longer than keys::MAX_INPUT_LENGTH resolves to nothing; one of exactly that length resolves.
+     *
+     * Control characters are stripped before the key, so both spellings fold to 'pt' and would match.
+     */
+    public function test_resolve_bulk_leaves_out_overlong_codes(): void {
+        $this->resetAfterTest();
+        $this->generator()->create_domain(['shortname' => 'iso639']);
+        $this->generator()->create_item(['domain' => 'iso639', 'code' => 'pt', 'label' => 'Portuguese']);
+
+        $atlimit = 'p' . str_repeat("\x01", keys::MAX_INPUT_LENGTH - 2) . 't';
+        $overlong = 'p' . str_repeat("\x01", keys::MAX_INPUT_LENGTH - 1) . 't';
+
+        $this->assertSame([$atlimit => 'Portuguese'], resolver::resolve_bulk('iso639', [$atlimit, $overlong]));
+        $this->assertSame('Portuguese', resolver::resolve('iso639', $atlimit));
+        $this->assertNull(resolver::resolve('iso639', $overlong));
     }
 
     /**

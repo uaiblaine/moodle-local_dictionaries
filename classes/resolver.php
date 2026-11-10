@@ -61,7 +61,8 @@ class resolver {
      * Resolve many codes of one domain.
      *
      * The result is keyed by the caller's spelling of each code (trimmed), so a caller holding
-     * 'ABC' finds its label even when the item was written as 'abc'. Unknown codes are absent.
+     * 'ABC' finds its label even when the item was written as 'abc'. Unknown codes are absent,
+     * and so is a code longer than keys::MAX_INPUT_LENGTH characters, which gets no key.
      *
      * @param string $domain Domain shortname.
      * @param array $codes List of codes (strings).
@@ -82,7 +83,11 @@ class resolver {
             if ($code === '') {
                 continue;
             }
-            $callerkeys[$code] = keys::code_key(keys::clean_code($code));
+            $codekey = keys::lookup_key($code);
+            if ($codekey === '') {
+                continue;
+            }
+            $callerkeys[$code] = $codekey;
         }
         if (empty($callerkeys)) {
             return [];
