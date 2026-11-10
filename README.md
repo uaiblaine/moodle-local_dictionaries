@@ -133,7 +133,13 @@ Option values are codes; option labels read "label (code)".
 | `local_dictionaries_upsert_reference_items` | write | `local/dictionaries:manage` |
 
 All three are available to AJAX and belong to the predefined service "Reference dictionaries
-API" (`local_dictionaries_api`). Batches are capped at 5000 items per call.
+API" (`local_dictionaries_api`). Batches are capped at 5000 items per call; a search query or
+parent code longer than 1020 characters returns no items.
+
+The plugin's own pages call the functions through AJAX and do not need the service. It is for
+integrations that call with a token, and it is installed disabled and limited to authorised
+users: to use it, enable it under Site administration > Server > Web services > External
+services and add the integration accounts under its "Authorised users".
 
 
 Capabilities
