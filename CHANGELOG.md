@@ -4,6 +4,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [v5.3-r3] - Unreleased
+
+Moodle 5.3 branch (`MOODLE_503_STABLE`): version `2026100502`, release `v5.3-r3`. Bounds on
+the input that the search and the CSV import process, and a predefined service that starts
+closed.
+
+### Upgrade notes
+- The predefined service "Reference dictionaries API" (`local_dictionaries_api`) is now limited
+  to authorised users. Core applies that to existing sites on upgrade, so a token whose user is
+  not on the service's "Authorised users" list stops working: add the integration accounts there
+  (Site administration > Server > Web services > External services) right after upgrading; the
+  list only appears once the service is restricted. On a new site the service is also installed disabled; an existing site keeps the
+  enabled state it had, because core never rewrites it.
+
+### Changed
+- The predefined service is installed disabled (`enabled` 0) and restricted to authorised users
+  (`restrictedusers` 1). The plugin's pages call the functions through AJAX, which does not use
+  the service.
+- `api::search()` (and the `local_dictionaries_search_items` web service) returns no items for a
+  query or parent code longer than `api::MAX_QUERY_LENGTH` (1020 characters) and derives no key
+  from it. The transliteration behind the search key grows faster than the text: before this, a
+  logged-in user could hold a web server process for over a minute with one 2 MB query.
+- The CSV import refuses a file or pasted text larger than `manager::MAX_CSV_BYTES` (10 MB),
+  checked in the form's validation as well as by the file picker, and runs with a one-hour time
+  limit and the extra memory limit, so a large import does not stop between committed chunks.
+
 ## [v5.3-r2] - 2026-10-23
 
 Moodle 5.3 branch (`MOODLE_503_STABLE`): version `2026100501`, release `v5.3-r2`. The plugin
