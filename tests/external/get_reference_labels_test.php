@@ -18,6 +18,7 @@ namespace local_dictionaries\external;
 
 use core_external\external_api;
 use local_dictionaries\api;
+use local_dictionaries\local\keys;
 
 /**
  * Tests for the get_reference_labels web service.
@@ -69,6 +70,24 @@ final class get_reference_labels_test extends \advanced_testcase {
         $result = get_reference_labels::execute('restricted', ['01', '99']);
         $result = external_api::clean_returnvalue(get_reference_labels::execute_returns(), $result);
         $this->assertSame([['code' => '01', 'label' => 'Secret']], $result['items']);
+    }
+
+    /**
+     * A code longer than keys::MAX_INPUT_LENGTH is left out of the response, not an error; one at the limit resolves.
+     *
+     * The control characters sit inside the code, where the parameter's trim leaves them and the
+     * key derivation strips them, so both codes fold to '01'.
+     */
+    public function test_overlong_code_is_left_out(): void {
+        $this->resetAfterTest();
+        $this->create_domains();
+        $this->setUser($this->getDataGenerator()->create_user());
+
+        $atlimit = '0' . str_repeat("\x01", keys::MAX_INPUT_LENGTH - 2) . '1';
+        $overlong = '0' . str_repeat("\x01", keys::MAX_INPUT_LENGTH - 1) . '1';
+        $response = $this->call(['domain' => 'open', 'codes' => [$atlimit, $overlong]]);
+        $this->assertFalse($response['error']);
+        $this->assertSame([['code' => $atlimit, 'label' => 'Public']], $response['data']['items']);
     }
 
     /**
