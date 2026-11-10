@@ -154,6 +154,25 @@ final class api_test extends \advanced_testcase {
     }
 
     /**
+     * The parent code bound counts characters, not bytes: a parent code of two-byte characters at the limit filters.
+     *
+     * U+0301 (combining acute accent) is two bytes in UTF-8 and is dropped by the key, so both
+     * parent codes fold to 'pa' and would match.
+     */
+    public function test_parent_code_bound_counts_characters(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+
+        $atlimit = 'PA' . str_repeat("\u{0301}", api::MAX_QUERY_LENGTH - 2);
+        $this->assertSame(api::MAX_QUERY_LENGTH, core_text::strlen($atlimit));
+        // The force is on: counted in bytes, the parent code would be over the limit.
+        $this->assertGreaterThan(api::MAX_QUERY_LENGTH, strlen($atlimit));
+        $this->assertSame(['1500800', '1501402'], $this->codes(api::search('cities', '', 20, $atlimit, 'uf')));
+
+        $this->assertSame([], $this->codes(api::search('cities', '', 20, $atlimit . "\u{0301}", 'uf')));
+    }
+
+    /**
      * The limit cuts the result and reports that more match; sortorder comes before the label.
      */
     public function test_limit_hasmore_and_sortorder(): void {
@@ -484,6 +503,27 @@ final class api_test extends \advanced_testcase {
 
         $result = api::lookup('uf', [$atlimit, $overlong, 'PA']);
         $this->assertSame([$atlimit, 'PA'], array_keys($result));
+        $this->assertSame('SP', $result[$atlimit]['code']);
+    }
+
+    /**
+     * The code bound counts characters, not bytes: a code of two-byte characters at the limit is looked up.
+     *
+     * U+0301 (combining acute accent) is two bytes in UTF-8 and is dropped by the key, so both
+     * spellings fold to 'sp' and would match.
+     */
+    public function test_lookup_bound_counts_characters(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+
+        $atlimit = 'S' . str_repeat("\u{0301}", keys::MAX_INPUT_LENGTH - 2) . 'P';
+        $this->assertSame(keys::MAX_INPUT_LENGTH, core_text::strlen($atlimit));
+        // The force is on: counted in bytes, the code would be over the limit.
+        $this->assertGreaterThan(keys::MAX_INPUT_LENGTH, strlen($atlimit));
+        $overlong = 'S' . str_repeat("\u{0301}", keys::MAX_INPUT_LENGTH - 1) . 'P';
+
+        $result = api::lookup('uf', [$atlimit, $overlong]);
+        $this->assertSame([$atlimit], array_keys($result));
         $this->assertSame('SP', $result[$atlimit]['code']);
     }
 
