@@ -6,9 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [v5.1-r3] - Unreleased
 
-Moodle 5.1 branch (`MOODLE_501_STABLE`): version `2025100602`, release `v5.1-r3`. Bounds on
-the input that the search and the CSV import process, and a predefined service that starts
-closed.
+Moodle 5.1 branch (`MOODLE_501_STABLE`): version `2025100603`, release `v5.1-r3`. Bounds on
+the input that the search and the CSV import process, a predefined service that starts
+closed, and code keys that no longer outgrow their column.
+
+### Fixed
+- A code in a script whose canonical decomposition is not only combining marks got a lookup key
+  longer than the code: a Hangul syllable became two or three jamo, so a code of 86 syllables
+  had a 258-character key and its write failed with a database error instead of the plugin's
+  own one. `keys::code_key()` now recomposes the key to NFC after dropping the accents, so a
+  Hangul or Tamil code keeps its length, and the item upsert and the CSV import refuse a code
+  whose key is still over 255 characters (`errorcodetoolong`, `csvrejectcodetoolong`): a few
+  characters, such as the musical symbol U+1D15E, never recompose.
+- The upgrade to `2025100603` rewrites the keys stored under the old derivation
+  (`manager::rekey_items()`) and bumps the revision of each domain it touches. Without it, an
+  item stored with the old key would stop resolving by its own code, and the next write of that
+  code would add a second item.
 
 ### Upgrade notes
 - The predefined service "Reference dictionaries API" (`local_dictionaries_api`) is now limited
