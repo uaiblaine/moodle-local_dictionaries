@@ -26,11 +26,18 @@
  * Upgrade the plugin.
  *
  * Upgrade steps are numbered in the version namespace of the branch they live on, never in
- * another branch's, and none exists yet for this one.
+ * another branch's.
  *
  * @param int $oldversion The version being upgraded from.
  * @return bool Always true.
  */
 function xmldb_local_dictionaries_upgrade(int $oldversion): bool {
+    if ($oldversion < 2025100603) {
+        // The code key is now recomposed to NFC: rewrite the keys stored under the old derivation
+        // (Hangul and other scripts whose decomposition is not only combining marks).
+        (new \local_dictionaries\local\manager())->rekey_items();
+        upgrade_plugin_savepoint(true, 2025100603, 'local', 'dictionaries');
+    }
+
     return true;
 }
