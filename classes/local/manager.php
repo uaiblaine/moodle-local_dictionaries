@@ -389,6 +389,58 @@ class manager {
     }
 
     /**
+     * Rewrite every stored code key that {@see keys::code_key()} now derives differently.
+     *
+     * Called by the upgrade step that changes the derivation. A key read back from the database
+     * must equal the key a caller derives, or the item stops resolving and the next write of its
+     * code inserts a second row. A rewritten key is the canonical composition of the stored one,
+     * and canonically different codes never share a composition, so a rewrite does not collide
+     * with another row of its domain. Each domain with a rewritten key gets a revision bump.
+     *
+     * @return int Number of items rewritten.
+     * @throws moodle_exception When the plugin tables are missing.
+     */
+    public function rekey_items(): int {
+        global $DB;
+
+        $this->ensure_tables_available();
+
+        $changed = [];
+        $rows = $DB->get_recordset(domains::ITEM_TABLE, null, 'id', 'id, domainid, code, codekey');
+        foreach ($rows as $row) {
+            $codekey = keys::code_key((string)$row->code);
+            if ($codekey !== (string)$row->codekey) {
+                $changed[(int)$row->id] = ['domainid' => (int)$row->domainid, 'codekey' => $codekey];
+            }
+        }
+        $rows->close();
+        if (!$changed) {
+            return 0;
+        }
+
+        $now = time();
+        $domainids = array_unique(array_column($changed, 'domainid'));
+        $transaction = $DB->start_delegated_transaction();
+        foreach ($changed as $id => $change) {
+            $DB->set_field(domains::ITEM_TABLE, 'codekey', $change['codekey'], ['id' => $id]);
+        }
+        foreach ($domainids as $domainid) {
+            $DB->execute(
+                'UPDATE {' . domains::DOMAIN_TABLE . '}
+                    SET revision = revision + 1, timemodified = :now
+                  WHERE id = :id',
+                ['now' => $now, 'id' => $domainid]
+            );
+        }
+        $transaction->allow_commit();
+
+        foreach ($DB->get_records_list(domains::DOMAIN_TABLE, 'id', $domainids, '', 'id, shortname') as $domain) {
+            domains::forget((string)$domain->shortname);
+        }
+        return count($changed);
+    }
+
+    /**
      * Check whether one domain shortname exists.
      *
      * @param string $domainshortname
@@ -415,10 +467,10 @@ class manager {
                 $ignored++;
                 continue;
             }
-            if (core_text::strlen($item['code']) > keys::MAX_KEY_LENGTH) {
+            $codekey = keys::code_key($item['code']);
+            if (!keys::code_fits($item['code'], $codekey)) {
                 throw new moodle_exception('errorcodetoolong', 'local_dictionaries', '', (int)$position + 1);
             }
-            $codekey = keys::code_key($item['code']);
             if (isset($normalised[$codekey])) {
                 // An earlier item with the same code is superseded by this one.
                 $ignored++;
@@ -972,7 +1024,7 @@ class manager {
         if ($code === '') {
             return self::REJECT_EMPTY_CODE;
         }
-        if (core_text::strlen($code) > keys::MAX_KEY_LENGTH) {
+        if (!keys::code_fits($code, keys::code_key($code))) {
             return self::REJECT_CODE_TOO_LONG;
         }
 
