@@ -120,6 +120,103 @@ final class manager_test extends \advanced_testcase {
     }
 
     /**
+     * Decomposition parts that are not marks are recomposed, so the key keeps the code's length.
+     */
+    public function test_code_key_recomposes_parts_that_are_not_marks(): void {
+        // A Hangul syllable decomposes into two or three jamo, a Tamil vowel sign into two signs.
+        $this->assertSame('한국어', keys::code_key('한국어'));
+        $this->assertSame("\u{0BCA}", keys::code_key("\u{0BCA}"));
+        // Accents still go after the recomposition: the precomposed letter is not rebuilt.
+        $this->assertSame('a', keys::code_key('Å'));
+        // A character excluded from recomposition keeps both parts: the key outgrows the code.
+        $this->assertSame(2, \core_text::strlen(keys::code_key("\u{1D15E}")));
+    }
+
+    /**
+     * A long Hangul code is stored and resolved: its key is as long as the code, not three times longer.
+     */
+    public function test_upsert_items_stores_long_hangul_code(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('hangul', 'Hangul');
+
+        $counts = $manager->upsert_items('hangul', [
+            ['code' => str_repeat('한', 86), 'label' => 'Eighty-six'],
+            ['code' => str_repeat('국', 255), 'label' => 'At the limit'],
+        ]);
+
+        $this->assertSame(['inserted' => 2, 'updated' => 0, 'ignored' => 0], $counts);
+        $stored = $DB->get_field('local_dictionaries_item', 'codekey', ['code' => str_repeat('한', 86)]);
+        $this->assertSame(str_repeat('한', 86), $stored);
+        $this->assertSame('Eighty-six', resolver::resolve('hangul', str_repeat('한', 86)));
+        $this->assertSame('At the limit', resolver::resolve('hangul', str_repeat('국', 255)));
+    }
+
+    /**
+     * A code that fits but whose key does not is refused with the plugin's error, not a database one.
+     */
+    public function test_upsert_items_refuses_code_whose_key_is_too_long(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('notes', 'Notes');
+
+        // Control: 127 half notes are a 254-character key, which fits.
+        $counts = $manager->upsert_items('notes', [['code' => str_repeat("\u{1D15E}", 127), 'label' => 'Fits']]);
+        $this->assertSame(1, $counts['inserted']);
+
+        try {
+            $manager->upsert_items('notes', [['code' => str_repeat("\u{1D15E}", 128), 'label' => 'Key too long']]);
+            $this->fail('A code whose key is longer than the column must be refused.');
+        } catch (\moodle_exception $e) {
+            $this->assertSame('errorcodetoolong', $e->errorcode);
+        }
+        $this->assertSame(1, $DB->count_records('local_dictionaries_item'));
+    }
+
+    /**
+     * Keys stored under the old derivation (decomposed Hangul) are rewritten, and the item resolves again.
+     */
+    public function test_rekey_items_rewrites_keys_of_the_old_derivation(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+        $manager = new manager();
+        $manager->upsert_domain('hangul', 'Hangul');
+        $manager->upsert_items('hangul', [['code' => 'SP', 'label' => 'São Paulo']]);
+        $domain = $DB->get_record('local_dictionaries_domain', ['shortname' => 'hangul']);
+        $oldkey = \Normalizer::normalize('한국', \Normalizer::FORM_D);
+        $DB->insert_record('local_dictionaries_item', (object)[
+            'domainid' => $domain->id,
+            'code' => '한국',
+            'codekey' => $oldkey,
+            'label' => 'Korea',
+            'searchkey' => 'korea',
+            'sortorder' => 0,
+            'active' => 1,
+            'timecreated' => time(),
+            'timemodified' => time(),
+        ]);
+        // The precondition: the old key does not resolve under the new derivation.
+        $this->assertSame(6, \core_text::strlen($oldkey));
+        $this->assertNull(resolver::resolve('hangul', '한국'));
+
+        $this->assertSame(1, $manager->rekey_items());
+
+        $this->assertSame('한국', $DB->get_field('local_dictionaries_item', 'codekey', ['code' => '한국']));
+        $this->assertSame('sp', $DB->get_field('local_dictionaries_item', 'codekey', ['code' => 'SP']));
+        $revision = (int)$DB->get_field('local_dictionaries_domain', 'revision', ['id' => $domain->id]);
+        $this->assertSame((int)$domain->revision + 1, $revision);
+        $this->assertSame('Korea', resolver::resolve('hangul', '한국'));
+        $counts = $manager->upsert_items('hangul', [['code' => '한국', 'label' => 'Korea']]);
+        $this->assertSame(['inserted' => 0, 'updated' => 0, 'ignored' => 1], $counts);
+        $this->assertSame(0, $manager->rekey_items());
+    }
+
+    /**
      * Two spellings of one code in one batch: the last one wins and the first counts as ignored.
      */
     public function test_upsert_items_folds_duplicates_in_one_batch(): void {
