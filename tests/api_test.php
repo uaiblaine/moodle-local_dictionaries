@@ -17,6 +17,7 @@
 namespace local_dictionaries;
 
 use core_text;
+use local_dictionaries\local\keys;
 
 /**
  * Tests for the search API.
@@ -466,6 +467,24 @@ final class api_test extends \advanced_testcase {
         $this->assertSame([], api::lookup('Bad Domain!', ['SP']));
         $this->assertSame([], api::lookup('uf', []));
         $this->assertSame([], api::lookup('uf', ['', '  ']));
+    }
+
+    /**
+     * A code longer than keys::MAX_INPUT_LENGTH is left out; one of exactly that length is looked up.
+     *
+     * Control characters are stripped before the key, so both spellings fold to 'sp' and would match.
+     */
+    public function test_lookup_leaves_out_overlong_codes(): void {
+        $this->resetAfterTest();
+        $this->create_cities();
+
+        $atlimit = 'S' . str_repeat("\x01", keys::MAX_INPUT_LENGTH - 2) . 'P';
+        $this->assertSame(keys::MAX_INPUT_LENGTH, core_text::strlen($atlimit));
+        $overlong = 'S' . str_repeat("\x01", keys::MAX_INPUT_LENGTH - 1) . 'P';
+
+        $result = api::lookup('uf', [$atlimit, $overlong, 'PA']);
+        $this->assertSame([$atlimit, 'PA'], array_keys($result));
+        $this->assertSame('SP', $result[$atlimit]['code']);
     }
 
     /**

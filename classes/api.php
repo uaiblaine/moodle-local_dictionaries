@@ -52,7 +52,7 @@ class api {
      * text is not typed by anyone, and the transliteration behind keys::search_key() grows faster
      * than the text.
      */
-    public const MAX_QUERY_LENGTH = keys::MAX_KEY_LENGTH * 4;
+    public const MAX_QUERY_LENGTH = keys::MAX_INPUT_LENGTH;
 
     /**
      * Whether a user may browse and search one domain.
@@ -198,7 +198,8 @@ class api {
      * listing or a search box; {@see self::search()} after {@see self::require_read()} does that.
      *
      * Codes match like {@see resolver::resolve_bulk()}: ignoring case and accents, the result
-     * keyed by the caller's spelling of each code (trimmed); unknown codes are absent. Each entry
+     * keyed by the caller's spelling of each code (trimmed); unknown codes are absent, and so is a
+     * code longer than keys::MAX_INPUT_LENGTH characters, which gets no key. Each entry
      * is an array with:
      * - code (string): the code as stored;
      * - label (string): raw, the consumer escapes it;
@@ -228,7 +229,11 @@ class api {
             if ($code === '') {
                 continue;
             }
-            $callerkeys[$code] = keys::code_key(keys::clean_code($code));
+            $codekey = keys::lookup_key($code);
+            if ($codekey === '') {
+                continue;
+            }
+            $callerkeys[$code] = $codekey;
         }
         if (empty($callerkeys)) {
             return [];
